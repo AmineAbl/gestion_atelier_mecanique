@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="MLD/atelier-mecanic.png" alt="Atelier mécanique" width="900" />
+  <img src="/mecanic.png" alt="Atelier mécanique" width="900" />
 </p>
 
 # Gestion d’atelier mécanique
