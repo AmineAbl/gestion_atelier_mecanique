@@ -11,12 +11,6 @@ Application web de gestion d’un atelier mécanique, réalisée en équipe (3 p
 - [Périmètre fonctionnel](#périmètre-fonctionnel)
 - [Technologies](#technologies)
 - [Architecture du dépôt](#architecture-du-dépôt)
-- [Modèle de données (MLD)](#modèle-de-données-mld)
-- [Prérequis](#prérequis)
-- [Démarrage rapide](#démarrage-rapide)
-- [Installation & démarrage](#installation--démarrage)
-  - [Back-end (Laravel)](#back-end-laravel)
-  - [Front-end (React)](#front-end-react)
 - [Tests](#tests)
 - [Notes](#notes)
 
