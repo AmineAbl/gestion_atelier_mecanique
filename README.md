@@ -60,7 +60,7 @@ Le MLD cible (présenté dans la documentation) est organisé autour des entité
 
 ## Prérequis
 
-- PHP **8.2+** 
+- PHP **8.2+**  
 - Composer
 - Node.js (LTS recommandé) + NPM
 - Un serveur de base de données (MySQL/MariaDB ou PostgreSQL)
