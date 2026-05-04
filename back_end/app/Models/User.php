@@ -19,9 +19,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'nom',
+        'prenom',
         'email',
-        'password',
+        'mdp',
+        'role'
     ];
 
     /**
@@ -30,7 +32,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
+        'mdp',
         'remember_token',
     ];
 
@@ -43,7 +45,54 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'mdp' => 'hashed',
         ];
+    }
+
+
+    public function isComptable()
+    {
+        return $this->role === 'comptable';
+    }
+
+    public function isResponsable()
+    {
+        return $this->role === 'responsable';
+    }
+
+    public function isMecanicien()
+    {
+        return $this->role === 'mecanicien';
+    }
+
+
+
+
+     public function reparations()
+    {
+        return $this->hasMany(Reparation::class, 'user_id');
+    }
+
+
+     public function factures()
+    {
+        return $this->hasMany(Facture::class, 'user_id');
+    }
+
+
+    // Scopes pour filtrer par rôle
+    public function scopeComptables($query)
+    {
+        return $query->where('role', 'comptable');
+    }
+
+    public function scopeResponsables($query)
+    {
+        return $query->where('role', 'responsable');
+    }
+
+    public function scopeMecaniciens($query)
+    {
+        return $query->where('role', 'mecanicien');
     }
 }
