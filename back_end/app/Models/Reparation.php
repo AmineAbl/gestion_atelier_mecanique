@@ -18,4 +18,21 @@ class Reparation extends Model
        'date_prevue_fin',
        'cout'
     ];
+
+
+    public function vehicules(){
+        return $this->belongsTo(Vehicule::class);
+    }
+
+    public function users(){
+        return $this->belongsTo(User::class);
+    }
+
+    public function factures(){
+        return $this->belongsTo(Facture::class);
+    }
+
+    public function pieces(){
+        return $this->belongsToMany(Piece::class);
+    }
 }

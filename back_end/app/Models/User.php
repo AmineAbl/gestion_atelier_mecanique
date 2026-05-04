@@ -80,19 +80,5 @@ class User extends Authenticatable
     }
 
 
-    // Scopes pour filtrer par rôle
-    public function scopeComptables($query)
-    {
-        return $query->where('role', 'comptable');
-    }
-
-    public function scopeResponsables($query)
-    {
-        return $query->where('role', 'responsable');
-    }
-
-    public function scopeMecaniciens($query)
-    {
-        return $query->where('role', 'mecanicien');
-    }
+    
 }

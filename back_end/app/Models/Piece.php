@@ -15,4 +15,8 @@ class Piece extends Model
        'prix',
        'quantite' 
     ];
+
+    public function reparations(){
+        return $this->belongsToMany(Reparation::class);
+    }
 }

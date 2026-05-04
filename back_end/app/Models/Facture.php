@@ -17,4 +17,13 @@ class Facture extends Model
        'date_validation',
        'statut' 
     ];
+
+
+    public function users(){
+        return $this->belongsTo(User::class);
+    }
+
+    public function reparations(){
+        return $this->hasOne(Reparation::class);
+    }
 }
