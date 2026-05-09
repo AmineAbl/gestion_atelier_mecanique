@@ -25,11 +25,14 @@ import {
   validatePhone
 } from '../../utils/helpers';
 
+import { useTheme } from '../../context/ThemeContext';
+
 /**
  * Clients Management Component
  * CRUD operations for Clients
  */
 export default function ClientsList({ clients, factures, reparations, vehicules }) {
+  const { isDark } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view', 'detail'
   const [selectedClient, setSelectedClient] = useState(null);
@@ -151,7 +154,7 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
       label: 'Téléphone',
       render: (row) => (
         <div className="flex items-center gap-2">
-          <Phone className="w-4 h-4 text-gray-500" />
+          <Phone className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
           {row.telephone}
         </div>
       )
@@ -163,11 +166,11 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
         <div className="flex items-center gap-2">
           {row.email ? (
             <>
-              <Mail className="w-4 h-4 text-gray-500" />
+              <Mail className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
               {row.email}
             </>
           ) : (
-            <span className="text-gray-400">-</span>
+            <span className={isDark ? 'text-gray-500' : 'text-gray-400'}>-</span>
           )}
         </div>
       )
@@ -189,21 +192,21 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
         <div className="flex gap-2">
           <button
             onClick={() => handleOpenModal('detail', row)}
-            className="text-blue-600 hover:text-blue-800"
+            className="text-blue-500 hover:text-blue-400"
             title="Voir détails"
           >
             <Eye className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleOpenModal('edit', row)}
-            className="text-green-600 hover:text-green-800"
+            className="text-green-500 hover:text-green-400"
             title="Modifier"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleDeleteClient(row.id)}
-            className="text-red-600 hover:text-red-800"
+            className="text-red-500 hover:text-red-400"
             title="Supprimer"
           >
             <Trash2 className="w-4 h-4" />
@@ -223,7 +226,7 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
         />
       )}
 
-      <Card className="mb-6 shadow-md">
+      <Card className="mb-6">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex-1">
             <input
@@ -231,7 +234,11 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
               placeholder="Rechercher par nom, prénom, téléphone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300"
+              className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 ${
+                isDark 
+                  ? 'bg-slate-800 border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/50' 
+                  : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-200'
+              }`}
             />
           </div>
           <Button onClick={() => handleOpenModal('create')} variant="primary" size="md">
@@ -311,11 +318,11 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
           {modalMode === 'detail' && selectedClient && (
             <div className="space-y-6">
               {/* Client Info */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-3">
+              <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-900/30 border border-blue-800' : 'bg-blue-50'}`}>
+                <h3 className={`font-semibold text-lg mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {selectedClient.prenom} {selectedClient.nom}
                 </h3>
-                <div className="space-y-2 text-sm">
+                <div className={`space-y-2 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   <p className="flex items-center gap-2">
                     <Phone className="w-4 h-4" /> {selectedClient.telephone}
                   </p>
@@ -329,29 +336,29 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
 
               {/* Stats */}
               <div>
-                <h4 className="font-semibold mb-3">Statistiques</h4>
+                <h4 className={`font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Statistiques</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Factures</p>
-                    <p className="text-2xl font-bold">
+                  <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Factures</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {getClientStats(selectedClient.id).totalFactures}
                     </p>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Total dépensé</p>
-                    <p className="text-2xl font-bold">
+                  <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total dépensé</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {formatCurrency(getClientStats(selectedClient.id).totalSpent)}
                     </p>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Réparations</p>
-                    <p className="text-2xl font-bold">
+                  <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Réparations</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {getClientStats(selectedClient.id).totalReparations}
                     </p>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Véhicules</p>
-                    <p className="text-2xl font-bold">
+                  <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Véhicules</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {getClientStats(selectedClient.id).totalVehicules}
                     </p>
                   </div>
@@ -361,13 +368,13 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
               {/* Vehicles */}
               {getClientStats(selectedClient.id).totalVehicules > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-3">Véhicules</h4>
+                  <h4 className={`font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Véhicules</h4>
                   <div className="space-y-2">
                     {vehicules
                       .filter(v => v.clientId === selectedClient.id)
                       .map(v => (
-                        <div key={v.id} className="flex items-center gap-2 bg-gray-50 p-3 rounded">
-                          <Car className="w-4 h-4 text-gray-500" />
+                        <div key={v.id} className={`flex items-center gap-2 p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10 text-gray-300' : 'bg-gray-50 text-gray-700'}`}>
+                          <Car className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
                           <span>
                             {v.marque} {v.modele} ({v.annee}) - {v.immatriculation}
                           </span>

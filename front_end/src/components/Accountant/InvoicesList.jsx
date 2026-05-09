@@ -23,11 +23,14 @@ import {
   generateInvoiceNumber
 } from '../../utils/helpers';
 
+import { useTheme } from '../../context/ThemeContext';
+
 /**
  * Invoices Management Component
  * CRUD operations for Factures (Invoices)
  */
 export default function InvoicesList({ factures, clients, reparations }) {
+  const { isDark } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
   const [selectedFacture, setSelectedFacture] = useState(null);
@@ -83,13 +86,13 @@ export default function InvoicesList({ factures, clients, reparations }) {
       setFormData(facture);
     } else {
       setFormData({
-        clientId: '',
-        reparationId: '',
+        clientId: clients.length > 0 ? clients[0].id : '',
+        reparationId: reparations.length > 0 ? reparations[0].id : '',
         total_piece: 0,
         cout: 0,
         prix_total: 0,
         statut: 'pending',
-        date_validation: ''
+        date_validation: new Date().toISOString().split('T')[0]
       });
     }
     setShowModal(true);
@@ -112,23 +115,124 @@ export default function InvoicesList({ factures, clients, reparations }) {
     setFormData(updatedForm);
   };
 
-  const handleSaveFacture = () => {
+  const handleSaveFacture = async () => {
     // Validation
     if (!formData.clientId || !formData.reparationId || !formData.cout) {
       setAlertMessage({ type: 'error', message: 'Veuillez remplir tous les champs obligatoires' });
       return;
     }
 
-    if (modalMode === 'create') {
-      factures.addFacture(formData);
-      setAlertMessage({ type: 'success', message: 'Facture créée avec succès' });
-    } else if (modalMode === 'edit') {
-      factures.updateFacture(selectedFacture.id, formData);
-      setAlertMessage({ type: 'success', message: 'Facture modifiée avec succès' });
+    try {
+      if (modalMode === 'create') {
+        await factures.addFacture(formData);
+        setAlertMessage({ type: 'success', message: 'Facture créée avec succès' });
+      } else if (modalMode === 'edit') {
+        await factures.updateFacture(selectedFacture.id, formData);
+        setAlertMessage({ type: 'success', message: 'Facture modifiée avec succès' });
+      }
+      handleCloseModal();
+    } catch (err) {
+      console.error(err);
+      setAlertMessage({ type: 'error', message: err.message || 'Erreur lors de la sauvegarde' });
     }
 
-    handleCloseModal();
     setTimeout(() => setAlertMessage(null), 3000);
+  };
+
+  const handlePrintFacture = (facture) => {
+    const clientName = getClientName(facture.clientId);
+    const reparationDesc = getReparationDescription(facture.reparationId);
+    const invoiceNumber = generateInvoiceNumber(facture.id, facture.date_validation);
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Facture ${invoiceNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 28px; font-weight: bold; color: #1e3a8a; }
+            .invoice-details { text-align: right; }
+            .row { display: flex; justify-content: space-between; margin-bottom: 15px; }
+            .label { font-weight: bold; color: #666; }
+            .value { font-weight: 500; }
+            .table-container { margin-top: 40px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background-color: #f8fafc; color: #333; }
+            .total-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; text-align: right; }
+            .total-row { display: flex; justify-content: flex-end; margin-bottom: 10px; font-size: 16px; }
+            .total-row.grand-total { font-size: 20px; font-weight: bold; color: #1e3a8a; }
+            .total-label { width: 150px; }
+            .footer { margin-top: 60px; text-align: center; color: #888; font-size: 14px; border-top: 1px solid #eee; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="title">FACTURE</div>
+              <p>Atelier Mécanique</p>
+            </div>
+            <div class="invoice-details">
+              <p><span class="label">Numéro:</span> <span class="value">${invoiceNumber}</span></p>
+              <p><span class="label">Date:</span> <span class="value">${formatDate(facture.date_validation)}</span></p>
+              <p><span class="label">Statut:</span> <span class="value">${facture.statut === 'paid' ? 'Payée' : facture.statut === 'pending' ? 'En attente' : 'Annulée'}</span></p>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 40px;">
+            <h3>Facturé à:</h3>
+            <p class="value" style="font-size: 18px;">${clientName}</p>
+          </div>
+
+          <div class="table-container">
+            <h3>Détails de la prestation</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Pièces</th>
+                  <th style="text-align: right;">Montant HT</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>${reparationDesc}</td>
+                  <td>${facture.total_piece}</td>
+                  <td style="text-align: right;">${formatCurrency(facture.cout)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="total-section">
+            <div class="total-row">
+              <div class="total-label">Total HT:</div>
+              <div>${formatCurrency(facture.cout)}</div>
+            </div>
+            <div class="total-row">
+              <div class="total-label">TVA (20%):</div>
+              <div>${formatCurrency(facture.prix_total - facture.cout)}</div>
+            </div>
+            <div class="total-row grand-total">
+              <div class="total-label">Total TTC:</div>
+              <div>${formatCurrency(facture.prix_total)}</div>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>Merci pour votre confiance.</p>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    // Use timeout to let styles load
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
   };
 
   const handleDeleteFacture = (id) => {
@@ -236,7 +340,7 @@ export default function InvoicesList({ factures, clients, reparations }) {
         />
       )}
 
-      <Card className="mb-6 shadow-md">
+      <Card className="mb-6">
         <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
           <div className="flex-1">
             <input
@@ -244,13 +348,21 @@ export default function InvoicesList({ factures, clients, reparations }) {
               placeholder="Rechercher par client ou numéro..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300"
+              className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 ${
+                isDark 
+                  ? 'bg-slate-800 border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/50' 
+                  : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-200'
+              }`}
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300 bg-white"
+            className={`px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 appearance-none ${
+              isDark 
+                ? 'bg-slate-800 border-white/10 text-white focus:border-blue-500 focus:ring-blue-500/50' 
+                : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-200'
+            }`}
           >
             <option value="">Tous les statuts</option>
             <option value="paid">Payée</option>
@@ -319,22 +431,24 @@ export default function InvoicesList({ factures, clients, reparations }) {
               <Input
                 label="Nombre de pièces"
                 type="number"
+                min="0"
                 value={formData.total_piece}
                 onChange={(e) => handleFormChange('total_piece', e.target.value)}
                 required
               />
 
               <Input
-                label="Montant HT (€)"
+                label="Montant HT (MAD)"
                 type="number"
                 step="0.01"
+                min="0"
                 value={formData.cout}
                 onChange={(e) => handleFormChange('cout', e.target.value)}
                 required
               />
 
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm text-blue-700">
+              <div className={`p-3 rounded-lg ${isDark ? 'bg-blue-900/30 border border-blue-800' : 'bg-blue-50'}`}>
+                <p className={`text-sm ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
                   <strong>Total TTC (20% TVA incluse):</strong> {formatCurrency(formData.prix_total)}
                 </p>
               </div>
@@ -371,45 +485,48 @@ export default function InvoicesList({ factures, clients, reparations }) {
           {modalMode === 'view' && selectedFacture && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Client</p>
-                  <p className="font-semibold">{getClientName(selectedFacture.clientId)}</p>
+                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Client</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{getClientName(selectedFacture.clientId)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Facture #</p>
-                  <p className="font-semibold">
+                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Facture #</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {generateInvoiceNumber(selectedFacture.id, selectedFacture.date_validation)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Réparation</p>
-                  <p className="font-semibold">{getReparationDescription(selectedFacture.reparationId)}</p>
+                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Réparation</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{getReparationDescription(selectedFacture.reparationId)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Statut</p>
+                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Statut</p>
                   <p className="font-semibold"><StatusBadge status={selectedFacture.statut} /></p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Montant HT</p>
-                  <p className="font-semibold">{formatCurrency(selectedFacture.cout)}</p>
+                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Montant HT</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{formatCurrency(selectedFacture.cout)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total TTC</p>
-                  <p className="font-semibold text-lg text-blue-600">
+                <div className={`p-3 rounded ${isDark ? 'bg-blue-900/30 border border-blue-800' : 'bg-blue-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-blue-400' : 'text-gray-600'}`}>Total TTC</p>
+                  <p className={`font-semibold text-lg ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                     {formatCurrency(selectedFacture.prix_total)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Date de validation</p>
-                  <p className="font-semibold">{formatDate(selectedFacture.date_validation)}</p>
+                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Date de validation</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{formatDate(selectedFacture.date_validation)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Nombre de pièces</p>
-                  <p className="font-semibold">{selectedFacture.total_piece}</p>
+                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Nombre de pièces</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedFacture.total_piece}</p>
                 </div>
               </div>
 
               <div className="flex gap-3 justify-end pt-4">
+                <Button onClick={() => handlePrintFacture(selectedFacture)} variant="secondary">
+                  <Download className="w-4 h-4 mr-2" /> Imprimer / PDF
+                </Button>
                 <Button onClick={() => handleOpenModal('edit', selectedFacture)} variant="primary">
                   <Edit2 className="w-4 h-4 mr-2" /> Modifier
                 </Button>

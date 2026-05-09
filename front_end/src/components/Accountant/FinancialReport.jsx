@@ -27,12 +27,14 @@ import {
   formatCurrency,
   calculateFinancialMetrics
 } from '../../utils/helpers';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
  * Financial Report Component
  * Shows comprehensive financial reports and analytics
  */
 export default function FinancialReport({ factures, reparations, clients }) {
+  const { isDark } = useTheme();
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().split('T')[0].slice(0, 7));
 
   // Calculate financial metrics
@@ -162,7 +164,7 @@ export default function FinancialReport({ factures, reparations, clients }) {
     <div className="space-y-6">
       {/* Header with Export */}
       <Card className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Rapports Financiers</h2>
+        <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Rapports Financiers</h2>
         <Button onClick={handleExportPDF} variant="secondary">
           <Download className="w-4 h-4 mr-2" /> Exporter en PDF
         </Button>
@@ -171,28 +173,28 @@ export default function FinancialReport({ factures, reparations, clients }) {
       {/* Key Metrics Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <p className="text-sm text-gray-600">Revenu total</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Revenu total</p>
+          <p className={`text-3xl font-bold mt-2 ${isDark ? 'text-green-400' : 'text-green-600'}`}>
             {formatCurrency(metrics.totalRevenue)}
           </p>
         </Card>
         <Card>
-          <p className="text-sm text-gray-600">Coûts totaux</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Coûts totaux</p>
+          <p className={`text-3xl font-bold mt-2 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
             {formatCurrency(metrics.totalCosts)}
           </p>
         </Card>
         <Card>
-          <p className="text-sm text-gray-600">Bénéfice net</p>
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Bénéfice net</p>
           <p className={`text-3xl font-bold mt-2 ${
-            metrics.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'
+            metrics.totalProfit >= 0 ? (isDark ? 'text-green-400' : 'text-green-600') : (isDark ? 'text-red-400' : 'text-red-600')
           }`}>
             {formatCurrency(metrics.totalProfit)}
           </p>
         </Card>
         <Card>
-          <p className="text-sm text-gray-600">Marge bénéficiaire</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Marge bénéficiaire</p>
+          <p className={`text-3xl font-bold mt-2 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
             {metrics.profitMargin}%
           </p>
         </Card>
@@ -200,32 +202,32 @@ export default function FinancialReport({ factures, reparations, clients }) {
 
       {/* Monthly Trend Chart */}
       <Card>
-        <h3 className="text-lg font-semibold mb-4">Tendance mensuelle (Revenu vs Coûts)</h3>
+        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Tendance mensuelle (Revenu vs Coûts)</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip formatter={(value) => formatCurrency(value)} />
+            <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#374151' : '#e5e7eb'} />
+            <XAxis dataKey="month" stroke={isDark ? '#9ca3af' : '#6b7280'} />
+            <YAxis stroke={isDark ? '#9ca3af' : '#6b7280'} />
+            <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', border: 'none', borderRadius: '8px', color: isDark ? '#f3f4f6' : '#111827' }} />
             <Legend />
             <Line 
               type="monotone" 
               dataKey="revenue" 
-              stroke="#10b981" 
+              stroke={isDark ? '#34d399' : '#10b981'} 
               name="Revenu"
               strokeWidth={2}
             />
             <Line 
               type="monotone" 
               dataKey="costs" 
-              stroke="#ef4444" 
+              stroke={isDark ? '#f87171' : '#ef4444'} 
               name="Coûts"
               strokeWidth={2}
             />
             <Line 
               type="monotone" 
               dataKey="profit" 
-              stroke="#3b82f6" 
+              stroke={isDark ? '#60a5fa' : '#3b82f6'} 
               name="Bénéfice"
               strokeWidth={2}
             />
@@ -237,7 +239,7 @@ export default function FinancialReport({ factures, reparations, clients }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Invoice Status Distribution */}
         <Card>
-          <h3 className="text-lg font-semibold mb-4">Statut des factures</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Statut des factures</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -261,7 +263,7 @@ export default function FinancialReport({ factures, reparations, clients }) {
 
         {/* Repair Status Distribution */}
         <Card>
-          <h3 className="text-lg font-semibold mb-4">Statut des réparations</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Statut des réparations</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -278,7 +280,7 @@ export default function FinancialReport({ factures, reparations, clients }) {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip contentStyle={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', border: 'none', borderRadius: '8px', color: isDark ? '#f3f4f6' : '#111827' }} />
             </PieChart>
           </ResponsiveContainer>
         </Card>
@@ -286,63 +288,63 @@ export default function FinancialReport({ factures, reparations, clients }) {
 
       {/* Top Clients */}
       <Card>
-        <h3 className="text-lg font-semibold mb-4">Top 5 des clients</h3>
+        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Top 5 des clients</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={topClients}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip formatter={(value) => formatCurrency(value)} />
-            <Bar dataKey="amount" fill="#3b82f6" name="Total dépensé" />
+            <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#374151' : '#e5e7eb'} />
+            <XAxis dataKey="name" stroke={isDark ? '#9ca3af' : '#6b7280'} />
+            <YAxis stroke={isDark ? '#9ca3af' : '#6b7280'} />
+            <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', border: 'none', borderRadius: '8px', color: isDark ? '#f3f4f6' : '#111827' }} />
+            <Bar dataKey="amount" fill={isDark ? '#60a5fa' : '#3b82f6'} name="Total dépensé" />
           </BarChart>
         </ResponsiveContainer>
       </Card>
 
       {/* Detailed Statistics Table */}
       <Card>
-        <h3 className="text-lg font-semibold mb-4">Statistiques détaillées</h3>
+        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Statistiques détaillées</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-100">
+          <table className={`w-full text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+            <thead className={isDark ? 'bg-slate-800' : 'bg-gray-100'}>
               <tr>
                 <th className="px-4 py-2 text-left">Métrique</th>
                 <th className="px-4 py-2 text-right">Valeur</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b">
+              <tr className={isDark ? 'border-b border-white/10' : 'border-b'}>
                 <td className="px-4 py-2">Nombre total de clients</td>
                 <td className="px-4 py-2 text-right font-semibold">{clients.length}</td>
               </tr>
-              <tr className="border-b">
+              <tr className={isDark ? 'border-b border-white/10' : 'border-b'}>
                 <td className="px-4 py-2">Nombre total de factures</td>
                 <td className="px-4 py-2 text-right font-semibold">{factures.length}</td>
               </tr>
-              <tr className="border-b">
+              <tr className={isDark ? 'border-b border-white/10' : 'border-b'}>
                 <td className="px-4 py-2">Factures payées</td>
-                <td className="px-4 py-2 text-right font-semibold text-green-600">
+                <td className={`px-4 py-2 text-right font-semibold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
                   {factures.filter(f => f.statut === 'paid').length}
                 </td>
               </tr>
-              <tr className="border-b">
+              <tr className={isDark ? 'border-b border-white/10' : 'border-b'}>
                 <td className="px-4 py-2">Factures en attente</td>
-                <td className="px-4 py-2 text-right font-semibold text-yellow-600">
+                <td className={`px-4 py-2 text-right font-semibold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
                   {factures.filter(f => f.statut === 'pending').length}
                 </td>
               </tr>
-              <tr className="border-b">
+              <tr className={isDark ? 'border-b border-white/10' : 'border-b'}>
                 <td className="px-4 py-2">Nombre total de réparations</td>
                 <td className="px-4 py-2 text-right font-semibold">{reparations.length}</td>
               </tr>
-              <tr className="border-b">
+              <tr className={isDark ? 'border-b border-white/10' : 'border-b'}>
                 <td className="px-4 py-2">Réparations terminées</td>
-                <td className="px-4 py-2 text-right font-semibold text-blue-600">
+                <td className={`px-4 py-2 text-right font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                   {reparations.filter(r => r.statut === 'completed').length}
                 </td>
               </tr>
-              <tr className="border-b">
+              <tr className={isDark ? 'border-b border-white/10' : 'border-b'}>
                 <td className="px-4 py-2">Réparations en cours</td>
-                <td className="px-4 py-2 text-right font-semibold text-purple-600">
+                <td className={`px-4 py-2 text-right font-semibold ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
                   {reparations.filter(r => r.statut === 'in-progress').length}
                 </td>
               </tr>

@@ -387,22 +387,22 @@ export default function AccountantDashboard({ user, onLogout }) {
   const menuItems = [
     {
       label: 'Vue d\'ensemble',    // "Overview" - main dashboard
-      icon: BarChart3,              // Use actual Lucide component
+      icon: '📊',                   // Chart emoji
       id: 'overview'                // Sets activeTab='overview' when clicked
     },
     {
       label: 'Factures',            // "Invoices" - invoice management
-      icon: CreditCard,             // Use actual Lucide component
+      icon: '📄',                   // Document emoji
       id: 'invoices'                // Sets activeTab='invoices' when clicked
     },
     {
       label: 'Clients',             // "Clients" - client management
-      icon: User,                   // Use actual Lucide component
+      icon: '👥',                   // People emoji
       id: 'clients'                 // Sets activeTab='clients' when clicked
     },
     {
       label: 'Rapports',            // "Reports" - financial reports
-      icon: TrendingUp,             // Use actual Lucide component
+      icon: '📈',                   // Chart/trend emoji
       id: 'reports'                 // Sets activeTab='reports' when clicked
     },
   ];
@@ -483,7 +483,7 @@ export default function AccountantDashboard({ user, onLogout }) {
               {/* mt-2: Small margin top (0.5rem) for spacing below title */}
               {/* text-lg: Slightly smaller than title (1.125rem) */}
               {/* font-medium: Font weight 500 (between regular and bold) */}
-              {/* Conditional text color: gray in both modes (lighter shade) */}
+              {{/* Conditional text color: gray in both modes (lighter shade) */}}
               <p className={`mt-2 text-lg font-medium transition-colors duration-300 ${
                 isDark ? 'text-gray-300' : 'text-gray-600'
               }`}>
@@ -492,9 +492,9 @@ export default function AccountantDashboard({ user, onLogout }) {
             </div>
 
             {/* RIGHT SECTION - User Controls & Theme Toggle */}
-            {/* ml-8: Large left margin (2rem) to push away from title */}
-            {/* Conditionally render only if user is logged in */}
-            {/* This prevents errors if user data is undefined */}
+            {{/* ml-8: Large left margin (2rem) to push away from title */}}
+            {{/* Conditionally render only if user is logged in */}}
+            {{/* This prevents errors if user data is undefined */}}
             {user && (
               // flex: Enable flexbox for horizontal layout
               // items-center: Vertically center all controls
@@ -533,7 +533,7 @@ export default function AccountantDashboard({ user, onLogout }) {
                   
                   {/* User email below name */}
                   {/* text-sm: Smaller text size for secondary info (0.875rem) */}
-                  {/* Conditional color: lighter shade than name */}
+                  {{/* Conditional color: lighter shade than name */}}
                   <p className={`text-sm transition-colors duration-300 ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   }`}>
@@ -542,18 +542,18 @@ export default function AccountantDashboard({ user, onLogout }) {
                 </div>
                 
                 {/* LOGOUT BUTTON */}
-                {/* Click handler: onClick={onLogout} triggers logout callback */}
-                {/* Callback props: Parent passes onLogout function that handles: */}
-                {/*   1. Clear session/authentication state */}
-                {/*   2. Remove user from localStorage */}
-                {/*   3. Navigate back to landing page */}
-                {/* flex items-center gap-2: Icon + text horizontally aligned */}
-                {/* px-4 py-2: Button padding for touch-friendly size */}
-                {/* rounded-lg: Rounded corners for modern appearance */}
-                {/* font-semibold: Bold text for visibility */}
-                {/* transition-all duration-300: Smooth animation on hover/click */}
-                {/* hover:scale-105: Grows 5% on hover for interactive feedback */}
-                {/* Conditional red styling: different red shades for dark/light mode */}
+                {{/* Click handler: onClick={onLogout} triggers logout callback */}}
+                {{/* Callback props: Parent passes onLogout function that handles: */}}
+                {{/*   1. Clear session/authentication state */}}
+                {{/*   2. Remove user from localStorage */}}
+                {{/*   3. Navigate back to landing page */}}
+                {{/* flex items-center gap-2: Icon + text horizontally aligned */}}
+                {{/* px-4 py-2: Button padding for touch-friendly size */}}
+                {{/* rounded-lg: Rounded corners for modern appearance */}}
+                {{/* font-semibold: Bold text for visibility */}}
+                {{/* transition-all duration-300: Smooth animation on hover/click */}}
+                {{/* hover:scale-105: Grows 5% on hover for interactive feedback */}}
+                {{/* Conditional red styling: different red shades for dark/light mode */}}
                 <button
                   onClick={onLogout}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105 ${
@@ -572,25 +572,25 @@ export default function AccountantDashboard({ user, onLogout }) {
       </div>
 
       {/* ========== MAIN CONTENT AREA ========== */}
-      {/* Container with max width and padding */}
-      {/* max-w-7xl: Limits content width (1280px) for readability */}
-      {/* mx-auto: Centers content horizontally */}
-      {/* px-6: Horizontal padding (1.5rem) */}
-      {/* py-8: Vertical padding (2rem) creates space from header */}
+      {{/* Container with max width and padding */}}
+      {{/* max-w-7xl: Limits content width (1280px) for readability */}}
+      {{/* mx-auto: Centers content horizontally */}}
+      {{/* px-6: Horizontal padding (1.5rem) */}}
+      {{/* py-8: Vertical padding (2rem) creates space from header */}}
       <div className="max-w-7xl mx-auto px-6 py-8">
         
         {/* ========== TAB NAVIGATION & MENU ========== */}
-        {/* flex gap-4 mb-8: Horizontal layout with 1rem gap, margin below */}
-        {/* items-center: Vertically align children (buttons and menu) */}
+        {{/* flex gap-4 mb-8: Horizontal layout with 1rem gap, margin below */}}
+        {{/* items-center: Vertically align children (buttons and menu) */}}
         <div className="flex gap-4 mb-8 items-center">
           
           {/* HORIZONTAL TAB BUTTONS */}
-          {/* flex-1: Takes remaining space, pushes circular menu to right */}
-          {/* flex gap-1: Buttons grouped with small 0.25rem spacing */}
-          {/* border-2 rounded-2xl p-1: Container styling */}
-          {/* rounded-2xl: Very rounded corners (1rem radius) for modern look */}
-          {/* p-1: Small padding (0.25rem) inside container around buttons */}
-          {/* transition-colors duration-300: Smooth theme switch */}
+          {{/* flex-1: Takes remaining space, pushes circular menu to right */}}
+          {{/* flex gap-1: Buttons grouped with small 0.25rem spacing */}}
+          {{/* border-2 rounded-2xl p-1: Container styling */}}
+          {{/* rounded-2xl: Very rounded corners (1rem radius) for modern look */}}
+          {{/* p-1: Small padding (0.25rem) inside container around buttons */}}
+          {{/* transition-colors duration-300: Smooth theme switch */}}
           <div className={`flex-1 flex gap-1 border-2 rounded-2xl p-1 transition-colors duration-300 ${
             isDark
               ? 'bg-slate-900/50 border-white/10'    // Dark mode: 50% transparent slate background
@@ -598,9 +598,9 @@ export default function AccountantDashboard({ user, onLogout }) {
           }`}>
             
             {/* Loop through menuItems to create tab buttons */}
-            {/* .map(): Iterates over each menu item */}
-            {/* key={item.id}: React key for list rendering optimization */}
-            {/* Prevents unnecessary re-renders and maintains component state */}
+            {{/* .map(): Iterates over each menu item */}}
+            {{/* key={item.id}: React key for list rendering optimization */}}
+            {{/* Prevents unnecessary re-renders and maintains component state */}}
             {menuItems.map((item) => (
               <button
                 key={item.id}
@@ -636,50 +636,50 @@ export default function AccountantDashboard({ user, onLogout }) {
           </div>
           
           {/* CIRCULAR MENU - Alternative navigation (mobile-friendly radial menu) */}
-          {/* flex justify-end: Aligns to right side of container */}
+          {{/* flex justify-end: Aligns to right side of container */}}
           <div className="flex justify-end">
             
             {/* CircularMenu component: Shows menu items in circular layout */}
-            {/* items={menuItems}: Uses same menu config as horizontal buttons */}
-            {/* onSelect={handleMenuSelect}: Callback when user selects item */}
-            {/* MenuItem click → onSelect(item) → handleMenuSelect(item) → setActiveTab(item.id) */}
-            {/* Component displays main toggle button, items appear on click */}
-            {/* Items arranged in circle around center point */}
+            {{/* items={menuItems}: Uses same menu config as horizontal buttons */}}
+            {{/* onSelect={handleMenuSelect}: Callback when user selects item */}}
+            {{/* MenuItem click → onSelect(item) → handleMenuSelect(item) → setActiveTab(item.id) */}}
+            {{/* Component displays main toggle button, items appear on click */}}
+            {{/* Items arranged in circle around center point */}}
             <CircularMenu items={menuItems} onSelect={handleMenuSelect} />
           </div>
         </div>
 
         {/* ========== CONDITIONAL TAB CONTENT RENDERING ========== */}
-        {/* Different content renders based on activeTab state value */}
-        {/* Only ONE section renders at a time */}
-        {/* Angular: && operator shows content only if condition is true */}
+        {{/* Different content renders based on activeTab state value */}}
+        {{/* Only ONE section renders at a time */}}
+        {{/* Angular: && operator shows content only if condition is true */}}
 
         {/* ========== OVERVIEW TAB CONTENT ========== */}
-        {/* Main dashboard view with financial metrics and charts */}
-        {/* Displays when activeTab === 'overview' */}
-        {/* Shows 4 key metrics + 4 charts + 2 info cards */}
+        {{/* Main dashboard view with financial metrics and charts */}}
+        {{/* Displays when activeTab === 'overview' */}}
+        {{/* Shows 4 key metrics + 4 charts + 2 info cards */}}
         {activeTab === 'overview' && (
           // space-y-8: Vertical spacing of 2rem between all child elements
           // Creates clear separation between sections
           <div className="space-y-8">
             
             {/* ========== FINANCIAL METRICS GRID ========== */}
-            {/* Grid showing 4 key financial metrics */}
-            {/* grid grid-cols-1: Single column on mobile */}
-            {/* md:grid-cols-2: 2 columns on medium screens */}
-            {/* lg:grid-cols-4: 4 columns on large screens */}
-            {/* gap-6: 1.5rem spacing between cards */}
-            {/* Responsive design adapts to screen size */}
+            {{/* Grid showing 4 key financial metrics */}}
+            {{/* grid grid-cols-1: Single column on mobile */}}
+            {{/* md:grid-cols-2: 2 columns on medium screens */}}
+            {{/* lg:grid-cols-4: 4 columns on large screens */}}
+            {{/* gap-6: 1.5rem spacing between cards */}}
+            {{/* Responsive design adapts to screen size */}}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               
               {/* CARD 1: REVENUE COLLECTED */}
-              {/* AnimatedStatsCard component with props */}
-              {/* title: Label shown above number */}
-              {/* value: Main metric value (formatted currency) */}
-              {/* change: Percentage change indicator (+12%) */}
-              {/* changePeriod: Time period for change ("ce mois" = "this month") */}
-              {/* icon: Lucide icon component (DollarSign) */}
-              {/* color: Color theme for card ("green" = green accent) */}
+              {{/* AnimatedStatsCard component with props */}}
+              {{/* title: Label shown above number */}}
+              {{/* value: Main metric value (formatted currency) */}}
+              {{/* change: Percentage change indicator (+12%) */}}
+              {{/* changePeriod: Time period for change ("ce mois" = "this month") */}}
+              {{/* icon: Lucide icon component (DollarSign) */}}
+              {{/* color: Color theme for card ("green" = green accent) */}}
               <AnimatedStatsCard
                 title="Revenus collectés"
                 value={formatCurrency(financialMetrics.totalRevenue)}
@@ -690,8 +690,8 @@ export default function AccountantDashboard({ user, onLogout }) {
               />
               
               {/* CARD 2: PENDING INVOICES */}
-              {/* Shows invoices waiting for payment */}
-              {/* Negative change (-5%) indicates fewer pending invoices (good) */}
+              {{/* Shows invoices waiting for payment */}}
+              {{/* Negative change (-5%) indicates fewer pending invoices (good) */}}
               <AnimatedStatsCard
                 title="Factures en attente"
                 value={formatCurrency(financialMetrics.totalPending)}
@@ -702,9 +702,9 @@ export default function AccountantDashboard({ user, onLogout }) {
               />
               
               {/* CARD 3: OPERATIONAL EXPENSES */}
-              {/* Shows business costs and expenses */}
-              {/* TrendingDown icon indicates expense tracking */}
-              {/* +8% means expenses increased (neutral, just tracking) */}
+              {{/* Shows business costs and expenses */}}
+              {{/* TrendingDown icon indicates expense tracking */}}
+              {{/* +8% means expenses increased (neutral, just tracking) */}}
               <AnimatedStatsCard
                 title="Dépenses opérationnelles"
                 value={formatCurrency(financialMetrics.totalCosts)}
@@ -715,10 +715,10 @@ export default function AccountantDashboard({ user, onLogout }) {
               />
               
               {/* CARD 4: NET PROFIT */}
-              {/* Bottom line - revenue minus expenses */}
-              {/* color changes based on profit value */}
-              {/* Positive profit → green card, negative → red card */}
-              {/* Conditional change: 15% if profitable, -10% if losses */}
+              {{/* Bottom line - revenue minus expenses */}}
+              {{/* color changes based on profit value */}}
+              {{/* Positive profit → green card, negative → red card */}}
+              {{/* Conditional change: 15% if profitable, -10% if losses */}}
               <AnimatedStatsCard
                 title="Profit net"
                 value={formatCurrency(financialMetrics.totalProfit)}
@@ -730,19 +730,19 @@ export default function AccountantDashboard({ user, onLogout }) {
             </div>
 
             {/* ========== CHARTS GRID - 2x2 LAYOUT ========== */}
-            {/* Grid with 4 advanced charts */}
-            {/* lg:grid-cols-2: 2 columns on large screens, 1 on small */}
-            {/* gap-6: 1.5rem spacing between charts */}
+            {{/* Grid with 4 advanced charts */}}
+            {{/* lg:grid-cols-2: 2 columns on large screens, 1 on small */}}
+            {{/* gap-6: 1.5rem spacing between charts */}}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* CHART 1: REVENUE TREND (Area Chart) */}
-              {/* Shows revenue progression over 6 months */}
-              {/* Area chart displays trend with filled area under line */}
-              {/* title: Chart header */}
-              {/* data={revenueTrendData}: Monthly revenue data */}
-              {/* dataKey="revenue": Which property to use for Y-axis values */}
-              {/* label="Revenus mensuels": Legend label */}
-              {/* height="300px": Chart display height */}
+              {{/* Shows revenue progression over 6 months */}}
+              {{/* Area chart displays trend with filled area under line */}}
+              {{/* title: Chart header */}}
+              {{/* data={revenueTrendData}: Monthly revenue data */}}
+              {{/* dataKey="revenue": Which property to use for Y-axis values */}}
+              {{/* label="Revenus mensuels": Legend label */}}
+              {{/* height="300px": Chart display height */}}
               <AreaChart
                 title="Tendance des revenus"
                 data={revenueTrendData}
@@ -752,10 +752,10 @@ export default function AccountantDashboard({ user, onLogout }) {
               />
 
               {/* CHART 2: REPAIRS DISTRIBUTION (Donut Chart) */}
-              {/* Pie/Donut chart showing repair status breakdown */}
-              {/* Visual proportions show status distribution */}
-              {/* data={repairsDistribution}: Repair count by status */}
-              {/* Donut shape (not full pie) for modern appearance */}
+              {{/* Pie/Donut chart showing repair status breakdown */}}
+              {{/* Visual proportions show status distribution */}}
+              {{/* data={repairsDistribution}: Repair count by status */}}
+              {{/* Donut shape (not full pie) for modern appearance */}}
               <DonutChart
                 title="Distribution des réparations"
                 data={repairsDistribution}
@@ -763,9 +763,9 @@ export default function AccountantDashboard({ user, onLogout }) {
               />
 
               {/* CHART 3: REVENUE GROWTH (Line Chart) */}
-              {/* Line graph showing monthly revenue progression */}
-              {/* Smooth curves connect data points */}
-              {/* Allows seeing trends and growth patterns */}
+              {{/* Line graph showing monthly revenue progression */}}
+              {{/* Smooth curves connect data points */}}
+              {{/* Allows seeing trends and growth patterns */}}
               <LineChart
                 title="Croissance des revenus"
                 data={revenueTrendData}
@@ -775,9 +775,9 @@ export default function AccountantDashboard({ user, onLogout }) {
               />
 
               {/* CHART 4: INVOICE STATUS (Progress Chart) */}
-              {/* Horizontal progress bars showing payment collection */}
-              {/* Shows % of invoices in each status (Paid, Pending, Overdue) */}
-              {/* data={invoiceStatus}: Payment status percentages */}
+              {{/* Horizontal progress bars showing payment collection */}}
+              {{/* Shows % of invoices in each status (Paid, Pending, Overdue) */}}
+              {{/* data={invoiceStatus}: Payment status percentages */}}
               <ProgressChart
                 title="État des factures"
                 data={invoiceStatus}
@@ -786,53 +786,53 @@ export default function AccountantDashboard({ user, onLogout }) {
             </div>
 
             {/* ========== QUICK STATS OVERVIEW ========== */}
-            {/* Grid with 4 simple statistic cards */}
-            {/* Compact display of key business numbers */}
-            {/* grid-cols-1 md:grid-cols-2 lg:grid-cols-4: Responsive 4-column on desktop */}
-            {/* gap-4: Smaller 1rem spacing for compact cards */}
+            {{/* Grid with 4 simple statistic cards */}}
+            {{/* Compact display of key business numbers */}}
+            {{/* grid-cols-1 md:grid-cols-2 lg:grid-cols-4: Responsive 4-column on desktop */}}
+            {{/* gap-4: Smaller 1rem spacing for compact cards */}}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               
               {/* STAT CARD 1: ACTIVE CLIENTS */}
-              {/* Displays total count of active clients */}
-              {/* Data source: clients.clients.length (array length) */}
-              {/* rounded-2xl: Rounded corners (1rem radius) */}
-              {/* border-2: 2px border for definition */}
-              {/* p-4: 1rem padding inside card */}
-              {/* transition-all duration-300: Smooth hover effects */}
-              {/* hover:border-white/20 / hover:border-gray-300: Highlight on hover */}
+              {{/* Displays total count of active clients */}}
+              {{/* Data source: clients.clients.length (array length) */}}
+              {{/* rounded-2xl: Rounded corners (1rem radius) */}}
+              {{/* border-2: 2px border for definition */}}
+              {{/* p-4: 1rem padding inside card */}}
+              {{/* transition-all duration-300: Smooth hover effects */}}
+              {{/* hover:border-white/20 / hover:border-gray-300: Highlight on hover */}}
               <div className={`rounded-2xl border-2 p-4 transition-all duration-300 ${
                 isDark
                   ? 'bg-slate-900/50 border-white/10 hover:border-white/20'
                   : 'bg-white border-gray-200 hover:border-gray-300'
               }`}>
-                {/* Label text */}
-                {/* text-sm: Small label size */}
-                {/* font-semibold: Bold for emphasis */}
-                {/* mb-2: 0.5rem margin below label */}
+                {{/* Label text */}}
+                {{/* text-sm: Small label size */}}
+                {{/* font-semibold: Bold for emphasis */}}
+                {{/* mb-2: 0.5rem margin below label */}}
                 <p className={`text-sm font-semibold mb-2 transition-colors duration-300 ${
                   isDark ? 'text-gray-300' : 'text-gray-700'
                 }`}>
                   Clients actifs
                 </p>
-                {/* Main number value */}
-                {/* text-2xl: Large text size (1.5rem) */}
-                {/* font-bold: Bold weight (700) */}
+                {{/* Main number value */}}
+                {{/* text-2xl: Large text size (1.5rem) */}}
+                {{/* font-bold: Bold weight (700) */}}
                 <p className={`text-2xl font-bold transition-colors duration-300 ${
                   isDark ? 'text-white' : 'text-black'
                 }`}>
                   {clients.clients.length}
                 </p>
-                {/* Growth indicator */}
-                {/* text-xs: Very small text (0.75rem) */}
-                {/* text-green-400: Green color for positive metric */}
-                {/* mt-1: 0.25rem top margin for spacing */}
+                {{/* Growth indicator */}}
+                {{/* text-xs: Very small text (0.75rem) */}}
+                {{/* text-green-400: Green color for positive metric */}}
+                {{/* mt-1: 0.25rem top margin for spacing */}}
                 <p className="text-xs text-green-400 mt-1">+12% croissance</p>
               </div>
               
               {/* STAT CARD 2: INVOICES THIS MONTH */}
-              {/* Displays count of invoices in current month */}
-              {/* Data: factures.factures.length (total invoices) */}
-              {/* Blue growth indicator for neutral metric */}
+              {{/* Displays count of invoices in current month */}}
+              {{/* Data: factures.factures.length (total invoices) */}}
+              {{/* Blue growth indicator for neutral metric */}}
               <div className={`rounded-2xl border-2 p-4 transition-all duration-300 ${
                 isDark
                   ? 'bg-slate-900/50 border-white/10 hover:border-white/20'
@@ -852,9 +852,9 @@ export default function AccountantDashboard({ user, onLogout }) {
               </div>
               
               {/* STAT CARD 3: COMPLETION RATE */}
-              {/* Percentage of repairs that are completed */}
-              {/* Data: repairsOverview.completionRate (0-100%) */}
-              {/* Green indicator shows excellent performance */}
+              {{/* Percentage of repairs that are completed */}}
+              {{/* Data: repairsOverview.completionRate (0-100%) */}}
+              {{/* Green indicator shows excellent performance */}}
               <div className={`rounded-2xl border-2 p-4 transition-all duration-300 ${
                 isDark
                   ? 'bg-slate-900/50 border-white/10 hover:border-white/20'
@@ -874,10 +874,10 @@ export default function AccountantDashboard({ user, onLogout }) {
               </div>
               
               {/* STAT CARD 4: RECOVERY RATE */}
-              {/* Percentage of invoices that are paid vs issued */}
-              {/* Calculation: (paid invoices / total invoices) * 100 */}
-              {/* toFixed(0): Round to whole number (no decimals) */}
-              {/* Math.max(..., 1): Prevents division by zero */}
+              {{/* Percentage of invoices that are paid vs issued */}}
+              {{/* Calculation: (paid invoices / total invoices) * 100 */}}
+              {{/* toFixed(0): Round to whole number (no decimals) */}}
+              {{/* Math.max(..., 1): Prevents division by zero */}}
               <div className={`rounded-2xl border-2 p-4 transition-all duration-300 ${
                 isDark
                   ? 'bg-slate-900/50 border-white/10 hover:border-white/20'
@@ -888,7 +888,7 @@ export default function AccountantDashboard({ user, onLogout }) {
                 }`}>
                   Recouvrement
                 </p>
-                {/* Green text for positive metric */}
+                {{/* Green text for positive metric */}}
                 <p className={`text-2xl font-bold text-green-400`}>
                   {/* Calculate recovery rate */}
                   {/* Filter: Get only paid invoices */}
@@ -898,32 +898,32 @@ export default function AccountantDashboard({ user, onLogout }) {
                   {/* Math.max(..., 1): Use 1 as minimum denominator (prevents division by 0) */}
                   {((factures.factures.filter(f => f.statut === 'paid').length / Math.max(factures.factures.length, 1)) * 100).toFixed(0)}%
                 </p>
-                {/* Amber (yellow) indicator means "needs attention" */}
+                {{/* Amber (yellow) indicator means "needs attention" */}}
                 <p className="text-xs text-amber-400 mt-1">À suivre</p>
               </div>
             </div>
 
             {/* ========== DETAILS CARDS - 2 COLUMN LAYOUT ========== */}
-            {/* Grid with 2 detailed information cards */}
-            {/* Left: Repair status breakdown */}
-            {/* Right: Key statistics */}
-            {/* lg:grid-cols-2: 2 columns on large screens, 1 on small */}
-            {/* gap-6: 1.5rem spacing between cards */}
+            {{/* Grid with 2 detailed information cards */}}
+            {{/* Left: Repair status breakdown */}}
+            {{/* Right: Key statistics */}}
+            {{/* lg:grid-cols-2: 2 columns on large screens, 1 on small */}}
+            {{/* gap-6: 1.5rem spacing between cards */}}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* ========== CARD: REPAIRS OVERVIEW ========== */}
-              {/* Detailed breakdown of repair statuses */}
+              {{/* Detailed breakdown of repair statuses */}}
               <div className={`rounded-2xl border-2 p-6 transition-all duration-300 ${
                 isDark
                   ? 'bg-slate-900/50 border-white/10 hover:border-white/20'
                   : 'bg-white border-gray-200 hover:border-gray-300'
               }`}>
-                {/* Card title with bottom border */}
-                {/* text-xl: Large title size (1.25rem) */}
-                {/* font-bold: Bold weight */}
-                {/* mb-6: 1.5rem margin below title */}
-                {/* pb-4: 1rem padding below title */}
-                {/* border-b-2: Bottom border for separation */}
+                {{/* Card title with bottom border */}}
+                {{/* text-xl: Large title size (1.25rem) */}}
+                {{/* font-bold: Bold weight */}}
+                {{/* mb-6: 1.5rem margin below title */}}
+                {{/* pb-4: 1rem padding below title */}}
+                {{/* border-b-2: Bottom border for separation */}}
                 <h3 className={`text-xl font-bold mb-6 pb-4 border-b-2 transition-colors duration-300 ${
                   isDark
                     ? 'text-white border-white/10'
@@ -931,11 +931,11 @@ export default function AccountantDashboard({ user, onLogout }) {
                 }`}>
                   État des réparations
                 </h3>
-                {/* space-y-4: 1rem vertical spacing between items */}
+                {{/* space-y-4: 1rem vertical spacing between items */}}
                 <div className="space-y-4">
-                  {/* Array of repair statistics to display */}
-                  {/* Each item: {label: string, value: number, color: string} */}
-                  {/* Map creates a row for each statistic */}
+                  {{/* Array of repair statistics to display */}}
+                  {{/* Each item: {label: string, value: number, color: string} */}}
+                  {{/* Map creates a row for each statistic */}}
                   {[
                     { label: 'Total réparations', value: repairsOverview.total, color: isDark ? 'text-white' : 'text-black' },
                     { label: 'Réparations terminées', value: repairsOverview.completed, color: 'text-green-400' },
@@ -944,12 +944,12 @@ export default function AccountantDashboard({ user, onLogout }) {
                   ].map((item, idx) => (
                     <div
                       key={idx}
-                      /* Flex row layout - label on left, value on right */
-                      /* justify-between: Spread items to opposite ends */
-                      /* items-center: Vertically center text */
-                      /* p-3: 0.75rem padding inside row */
-                      /* rounded-lg: Rounded corners (0.5rem) */
-                      /* border: 1px border (default) */
+                      {{/* Flex row layout - label on left, value on right */}}
+                      {{/* justify-between: Spread items to opposite ends */}}
+                      {{/* items-center: Vertically center text */}}
+                      {{/* p-3: 0.75rem padding inside row */}}
+                      {{/* rounded-lg: Rounded corners (0.5rem) */}}
+                      {{/* border: 1px border (default) */}}
                       className={`flex justify-between items-center p-3 rounded-lg border transition-colors duration-300 ${
                         isDark
                           ? 'bg-slate-800/50 border-white/10'
@@ -960,16 +960,16 @@ export default function AccountantDashboard({ user, onLogout }) {
                       // Creates cascade effect when component loads
                       style={{ animation: `fadeInUp 0.6s ease-out ${idx * 0.1}s both` }}
                     >
-                      {/* Label text on left */}
+                      {{/* Label text on left */}}
                       <span className={`font-semibold transition-colors duration-300 ${
                         isDark ? 'text-gray-300' : 'text-gray-700'
                       }`}>
                         {item.label}:
                       </span>
-                      {/* Value number on right */}
-                      {/* font-bold: Make number stand out */}
-                      {/* text-lg: Larger text for emphasis (1.125rem) */}
-                      {/* item.color: Apply color based on status */}
+                      {{/* Value number on right */}}
+                      {{/* font-bold: Make number stand out */}}
+                      {{/* text-lg: Larger text for emphasis (1.125rem) */}}
+                      {{/* item.color: Apply color based on status */}}
                       <span className={`font-bold text-lg ${item.color}`}>
                         {item.value}
                       </span>
@@ -979,14 +979,14 @@ export default function AccountantDashboard({ user, onLogout }) {
               </div>
 
               {/* ========== CARD: KEY STATISTICS ========== */}
-              {/* Summary statistics section */}
-              {/* Similar layout to repairs card */}
+              {{/* Summary statistics section */}}
+              {{/* Similar layout to repairs card */}}
               <div className={`rounded-2xl border-2 p-6 transition-all duration-300 ${
                 isDark
                   ? 'bg-slate-900/50 border-white/10 hover:border-white/20'
                   : 'bg-white border-gray-200 hover:border-gray-300'
               }`}>
-                {/* Card title */}
+                {{/* Card title */}}
                 <h3 className={`text-xl font-bold mb-6 pb-4 border-b-2 transition-colors duration-300 ${
                   isDark
                     ? 'text-white border-white/10'
@@ -994,7 +994,7 @@ export default function AccountantDashboard({ user, onLogout }) {
                 }`}>
                   Statistiques clés
                 </h3>
-                {/* Statistics rows */}
+                {{/* Statistics rows */}}
                 <div className="space-y-4">
                   {[
                     { label: 'Clients actifs', value: clients.clients.length, color: isDark ? 'text-white' : 'text-black' },
@@ -1028,22 +1028,21 @@ export default function AccountantDashboard({ user, onLogout }) {
         )}
 
         {/* ========== INVOICES TAB ========== */}
-        {/* Tab content: Invoice management and display */}
-        {/* Renders InvoicesList component only when activeTab === 'invoices' */}
-        {/* Pass all required data as props */}
+        {{/* Tab content: Invoice management and display */}}
+        {{/* Renders InvoicesList component only when activeTab === 'invoices' */}}
+        {{/* Pass all required data as props */}}
         {activeTab === 'invoices' && (
           <InvoicesList
-            factures={factures}
-            clients={clients.clients}
-            reparations={reparations.reparations}
-            vehicules={vehicules.vehicules}
+            factures={factures}                      // Invoice data and methods
+            clients={clients.clients}                 // Client list for reference
+            reparations={reparations.reparations}     // Repair data linked to invoices
           />
         )}
 
         {/* ========== CLIENTS TAB ========== */}
-        {/* Tab content: Client management and display */}
-        {/* Renders ClientsList component only when activeTab === 'clients' */}
-        {/* Pass all required data as props */}
+        {{/* Tab content: Client management and display */}}
+        {{/* Renders ClientsList component only when activeTab === 'clients' */}}
+        {{/* Pass all required data as props */}}
         {activeTab === 'clients' && (
           <ClientsList
             clients={clients}                         // Client data and methods
@@ -1054,9 +1053,9 @@ export default function AccountantDashboard({ user, onLogout }) {
         )}
 
         {/* ========== REPORTS TAB ========== */}
-        {/* Tab content: Financial reports and analysis */}
-        {/* Renders FinancialReport component only when activeTab === 'reports' */}
-        {/* Pass all required data as props */}
+        {{/* Tab content: Financial reports and analysis */}}
+        {{/* Renders FinancialReport component only when activeTab === 'reports' */}}
+        {{/* Pass all required data as props */}}
         {activeTab === 'reports' && (
           <FinancialReport
             factures={factures.factures}              // Invoice data for analysis
@@ -1066,9 +1065,9 @@ export default function AccountantDashboard({ user, onLogout }) {
         )}
 
         {/* ========== ANIMATION STYLES ========== */}
-        {/* CSS keyframes defined inline for component scoping */}
-        {/* fadeInUp: Fade in while moving up from below */}
-        {/* Used for detail card rows - creates cascade effect */}
+        {{/* CSS keyframes defined inline for component scoping */}}
+        {{/* fadeInUp: Fade in while moving up from below */}}
+        {{/* Used for detail card rows - creates cascade effect */}}
         <style>{`
           @keyframes fadeInUp {
             from {
@@ -1084,9 +1083,9 @@ export default function AccountantDashboard({ user, onLogout }) {
       </div>
 
       {/* ========== FOOTER ========== */}
-      {/* Footer component - Shared across all pages */}
-      {/* Contains branding, links, copyright, theme toggle */}
-      {/* Positioned at bottom of page */}
+      {{/* Footer component - Shared across all pages */}}
+      {{/* Contains branding, links, copyright, theme toggle */}}
+      {{/* Positioned at bottom of page */}}
       <Footer />
     </div>
   );

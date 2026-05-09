@@ -23,7 +23,7 @@ class Client extends Model
 
     public function reparations()
     {
-        return $this->hasMany(Reparation::class);
+        return $this->hasManyThrough(Reparation::class, Vehicule::class);
     }
 
 

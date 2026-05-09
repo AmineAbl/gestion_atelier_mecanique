@@ -15,11 +15,34 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // ============================================================
+        // CREATE DEFAULT COMPTABLE (ACCOUNTANT) USER
+        // ============================================================
+        // Default credentials for testing:
+        // Email: comptable@gmail.com
+        // Password: 12345
+        // Role: comptable
+        // ============================================================
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Check if comptable user already exists
+        $existingUser = User::where('email', 'comptable@gmail.com')->first();
+
+        if (!$existingUser) {
+            User::create([
+                'nom'    => 'Comptable',
+                'prenom' => 'Admin',
+                'email'  => 'comptable@gmail.com',
+                'mdp'    => '12345',   // The 'hashed' cast on the model auto-hashes this
+                'role'   => 'comptable',
+            ]);
+
+            echo "✓ Comptable user created successfully\n";
+        } else {
+            echo "✓ Comptable user already exists\n";
+        }
+
+        // Additional test users can be added here for other roles
+        // (e.g., mechanic, manager) but NOT as per user requirements
     }
 }
+

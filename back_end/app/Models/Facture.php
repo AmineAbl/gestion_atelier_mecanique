@@ -15,7 +15,9 @@ class Facture extends Model
        'cout',
        'prix_total',
        'date_validation',
-       'statut' 
+       'statut',
+       'reparation_id',
+       'user_id'
     ];
 
 

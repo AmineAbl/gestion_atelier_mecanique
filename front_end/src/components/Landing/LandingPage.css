@@ -261,6 +261,7 @@
   letter-spacing: -1.5px;
   margin-bottom: 24px;
   animation: title-blur-in 0.8s ease-out;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @keyframes title-blur-in {
@@ -416,12 +417,14 @@
   font-weight: 700;
   margin-bottom: 16px;
   letter-spacing: -1px;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .features-subtitle {
   font-size: 18px;
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .features-grid {
@@ -504,7 +507,7 @@
 }
 
 /* =====================================================
-   STATS SECTION
+   STATS SECTION & COUNT UP
    ===================================================== */
 
 .stats-section {
@@ -558,6 +561,26 @@
   font-weight: 500;
 }
 
+/* Count Up Component */
+.count-up-container {
+  animation: fade-in-up 0.6s ease-out;
+}
+
+.count-up-number {
+  font-size: 48px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 12px;
+  animation: number-pulse 2s ease-in-out infinite;
+}
+
+.count-up-label {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-weight: 500;
+}
+
 /* =====================================================
    CTA SECTION
    ===================================================== */
@@ -584,6 +607,7 @@
   font-weight: 700;
   margin-bottom: 16px;
   letter-spacing: -1px;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .cta-subtitle {
@@ -591,11 +615,82 @@
   color: rgba(255, 255, 255, 0.7);
   margin-bottom: 32px;
   line-height: 1.6;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .cta-button.large {
   padding: 20px 48px;
   font-size: 18px;
+}
+
+/* =====================================================
+   DASHBOARD LINK SECTION
+   ===================================================== */
+
+.dashboard-link-section {
+  position: relative;
+  padding: 60px 20px;
+  text-align: center;
+  z-index: 2;
+}
+
+.dashboard-link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.2));
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-link-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.dashboard-link-button:hover::before {
+  width: 250px;
+  height: 250px;
+}
+
+.dashboard-link-button:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(139, 92, 246, 0.4));
+  border-color: rgba(59, 130, 246, 0.8);
+  box-shadow: 
+    0 8px 25px rgba(59, 130, 246, 0.4),
+    0 0 15px rgba(139, 92, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.dashboard-link-button:active {
+  transform: translateY(0);
+}
+
+.dashboard-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.dashboard-link-button:hover .dashboard-icon {
+  transform: scale(1.1);
 }
 
 /* =====================================================

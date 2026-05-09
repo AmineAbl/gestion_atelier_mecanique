@@ -1,14 +1,20 @@
 import React from 'react';
 import { getStatusBadgeColor, getStatusLabel } from '../../utils/helpers';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
  * Reusable Card Component - Modern, professional styling
  */
-export const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-2xl shadow-lg p-6 transition-shadow duration-300 hover:shadow-xl ${className}`}>
-    {children}
-  </div>
-);
+export const Card = ({ children, className = '' }) => {
+  const { isDark } = useTheme();
+  return (
+    <div className={`rounded-2xl shadow-lg p-6 transition-all duration-300 ${
+      isDark ? 'bg-slate-900/50 border border-white/10' : 'bg-white hover:shadow-xl'
+    } ${className}`}>
+      {children}
+    </div>
+  );
+};
 
 /**
  * Status Badge Component - Consistent styling with professional colors
@@ -23,27 +29,29 @@ export const StatusBadge = ({ status }) => (
  * Financial Metric Card - Modern card with icon and value
  */
 export const MetricCard = ({ label, value, icon: Icon, color = 'blue' }) => {
+  const { isDark } = useTheme();
+  
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
-    green: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
-    yellow: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
-    red: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
+    blue: isDark ? 'bg-blue-900/30 text-blue-400 border-blue-800' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
+    green: isDark ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
+    yellow: isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
+    red: isDark ? 'bg-red-900/30 text-red-400 border-red-800' : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
   };
 
   return (
-    <Card className={`border-2 ${colorClasses[color]} cursor-default transition-all duration-300`}>
+    <div className={`rounded-2xl border-2 p-6 transition-all duration-300 ${colorClasses[color]}`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
-          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">{label}</p>
+          <p className={`text-xs font-medium uppercase tracking-wide mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{label}</p>
           <p className="text-3xl font-bold tracking-tight">{value}</p>
         </div>
         {Icon && (
-          <div className="flex-shrink-0 text-4xl opacity-30 transition-opacity duration-300">
+          <div className="flex-shrink-0 text-4xl opacity-50 transition-opacity duration-300">
             <Icon className="w-10 h-10" />
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 
@@ -51,6 +59,7 @@ export const MetricCard = ({ label, value, icon: Icon, color = 'blue' }) => {
  * Modal Component - Professional modal with backdrop
  */
 export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
+  const { isDark } = useTheme();
   if (!isOpen) return null;
 
   const sizeClasses = {
@@ -61,19 +70,25 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 transition-opacity duration-300">
-      <Card className={`w-full ${sizeClasses[size]} shadow-2xl max-h-[90vh] overflow-y-auto`}>
-        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300">
+      <div className={`w-full ${sizeClasses[size]} rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto p-6 transition-all duration-300 ${
+        isDark ? 'bg-slate-900 border border-white/10' : 'bg-white'
+      }`}>
+        <div className={`flex justify-between items-center mb-6 pb-4 border-b ${
+          isDark ? 'border-white/10' : 'border-gray-200'
+        }`}>
+          <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors duration-200 text-2xl font-light"
+            className={`transition-colors duration-200 text-2xl font-light ${
+              isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-600'
+            }`}
           >
             ×
           </button>
         </div>
-        <div>{children}</div>
-      </Card>
+        <div className={isDark ? 'text-white' : 'text-gray-900'}>{children}</div>
+      </div>
     </div>
   );
 };
@@ -89,12 +104,18 @@ export const Button = ({
   className = '',
   disabled = false 
 }) => {
+  const { isDark } = useTheme();
+  
   const variants = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg',
-    secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 shadow-sm',
+    secondary: isDark 
+      ? 'bg-slate-800 text-white hover:bg-slate-700 active:bg-slate-600 border border-white/10'
+      : 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 shadow-sm',
     danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-md hover:shadow-lg',
     success: 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-md hover:shadow-lg',
-    outline: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100'
+    outline: isDark
+      ? 'border-2 border-white/20 text-white hover:bg-white/10'
+      : 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100'
   };
 
   const sizes = {
@@ -126,29 +147,40 @@ export const Input = ({
   type = 'text', 
   placeholder = '',
   required = false,
-  error = null
-}) => (
-  <div className="mb-5">
-    {label && (
-      <label className="block text-sm font-semibold text-gray-700 mb-2">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-    )}
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 ${
-        error 
-          ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-          : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-      }`}
-    />
-    {error && <p className="text-red-600 text-sm mt-2 font-medium">{error}</p>}
-  </div>
-);
+  error = null,
+  step,
+  min,
+  max
+}) => {
+  const { isDark } = useTheme();
+  return (
+    <div className="mb-5">
+      {label && (
+        <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        step={step}
+        min={min}
+        max={max}
+        className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 ${
+          isDark 
+            ? 'bg-slate-800 border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/50' 
+            : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-200'
+        } ${
+          error ? (isDark ? 'border-red-500/50 focus:border-red-500' : 'border-red-300 focus:border-red-500 focus:ring-red-200') : ''
+        }`}
+      />
+      {error && <p className="text-red-500 text-sm mt-2 font-medium">{error}</p>}
+    </div>
+  );
+};
 
 /**
  * Select Dropdown Component - Modern select with consistent styling
@@ -160,103 +192,121 @@ export const Select = ({
   options = [],
   required = false,
   error = null
-}) => (
-  <div className="mb-5">
-    {label && (
-      <label className="block text-sm font-semibold text-gray-700 mb-2">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-    )}
-    <select
-      value={value}
-      onChange={onChange}
-      className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 appearance-none bg-white ${
-        error 
-          ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-          : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-      }`}
-    >
-      <option value="">-- Sélectionnez une option --</option>
-      {options.map(option => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-    {error && <p className="text-red-600 text-sm mt-2 font-medium">{error}</p>}
-  </div>
-);
+}) => {
+  const { isDark } = useTheme();
+  return (
+    <div className="mb-5">
+      {label && (
+        <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      <select
+        value={value}
+        onChange={onChange}
+        className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 appearance-none ${
+          isDark 
+            ? 'bg-slate-800 border-white/10 text-white focus:border-blue-500 focus:ring-blue-500/50' 
+            : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-200'
+        } ${
+          error ? (isDark ? 'border-red-500/50 focus:border-red-500' : 'border-red-300 focus:border-red-500 focus:ring-red-200') : ''
+        }`}
+      >
+        <option value="">-- Sélectionnez une option --</option>
+        {options.map(option => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {error && <p className="text-red-500 text-sm mt-2 font-medium">{error}</p>}
+    </div>
+  );
+};
 
 /**
  * Table Component - Professional table with better styling
  */
-export const Table = ({ columns, data, onRowClick = null }) => (
-  <div className="overflow-x-auto rounded-xl border border-gray-200">
-    <table className="w-full">
-      <thead>
-        <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-          {columns.map(col => (
-            <th 
-              key={col.key}
-              className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wide"
-            >
-              {col.label}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row, idx) => (
-          <tr
-            key={idx}
-            onClick={() => onRowClick?.(row)}
-            className={`border-b border-gray-100 transition-all duration-200 ${
-              onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''
-            }`}
-          >
+export const Table = ({ columns, data, onRowClick = null }) => {
+  const { isDark } = useTheme();
+  return (
+    <div className={`overflow-x-auto rounded-xl border ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+      <table className="w-full">
+        <thead>
+          <tr className={`border-b-2 ${isDark ? 'bg-slate-800 border-white/10' : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'}`}>
             {columns.map(col => (
-              <td key={col.key} className="px-6 py-4 text-sm text-gray-700 font-medium">
-                {col.render ? col.render(row) : row[col.key]}
-              </td>
+              <th 
+                key={col.key}
+                className={`px-6 py-4 text-left text-sm font-bold uppercase tracking-wide ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+              >
+                {col.label}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+        </thead>
+        <tbody>
+          {data.map((row, idx) => (
+            <tr
+              key={idx}
+              onClick={() => onRowClick?.(row)}
+              className={`border-b transition-all duration-200 ${
+                isDark 
+                  ? 'border-white/5 ' + (onRowClick ? 'cursor-pointer hover:bg-slate-800/50' : '')
+                  : 'border-gray-100 ' + (onRowClick ? 'cursor-pointer hover:bg-blue-50' : '')
+              }`}
+            >
+              {columns.map(col => (
+                <td key={col.key} className={`px-6 py-4 text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {col.render ? col.render(row) : row[col.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 /**
  * Loading Spinner - Professional animated spinner
  */
-export const Spinner = () => (
-  <div className="flex justify-center items-center py-12">
-    <div className="relative w-12 h-12">
-      <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-      <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 border-r-blue-600 animate-spin"></div>
+export const Spinner = () => {
+  const { isDark } = useTheme();
+  return (
+    <div className="flex justify-center items-center py-12">
+      <div className="relative w-12 h-12">
+        <div className={`absolute inset-0 rounded-full border-4 ${isDark ? 'border-slate-700' : 'border-gray-200'}`}></div>
+        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 border-r-blue-600 animate-spin"></div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /**
  * Empty State - Professional empty state message
  */
-export const EmptyState = ({ message = 'Aucune donnée disponible' }) => (
-  <div className="text-center py-16">
-    <p className="text-gray-500 text-lg font-medium">{message}</p>
-  </div>
-);
+export const EmptyState = ({ message = 'Aucune donnée disponible' }) => {
+  const { isDark } = useTheme();
+  return (
+    <div className="text-center py-16">
+      <p className={`text-lg font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{message}</p>
+    </div>
+  );
+};
 
 /**
  * Alert Component - Professional alerts with consistent styling
  */
 export const Alert = ({ type = 'info', message, onClose = null }) => {
+  const { isDark } = useTheme();
+  
   const typeClasses = {
-    info: 'bg-blue-50 text-blue-800 border-blue-200',
-    success: 'bg-green-50 text-green-800 border-green-200',
-    error: 'bg-red-50 text-red-800 border-red-200',
-    warning: 'bg-amber-50 text-amber-800 border-amber-200'
+    info: isDark ? 'bg-blue-900/30 text-blue-400 border-blue-800' : 'bg-blue-50 text-blue-800 border-blue-200',
+    success: isDark ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-50 text-green-800 border-green-200',
+    error: isDark ? 'bg-red-900/30 text-red-400 border-red-800' : 'bg-red-50 text-red-800 border-red-200',
+    warning: isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800' : 'bg-amber-50 text-amber-800 border-amber-200'
   };
 
   return (
