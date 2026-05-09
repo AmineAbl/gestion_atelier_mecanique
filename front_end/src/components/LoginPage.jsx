@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { ArrowLeft, Loader } from 'lucide-react';
 import styles from './LoginPage.module.css';
+import { loginWithApiOrDemo } from '../utils/authLogin';
 
-export default function LoginPage() {
+export default function LoginPage({ onLoginSuccess, onBackToHome }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -11,29 +13,18 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (!email || !password) {
       setError('Veuillez remplir tous les champs');
       return;
     }
 
-    if (!email.includes('@')) {
-      setError('Veuillez entrer une adresse email valide');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      // Simule un appel API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Ici vous pouvez ajouter votre logique d'authentification
-      console.log('Login attempt:', { email, password });
-      
-      // Exemple: redirection après succès
-      // navigate('/dashboard');
+      const userData = await loginWithApiOrDemo(email, password);
+      onLoginSuccess(userData);
     } catch (err) {
-      setError('Une erreur est survenue. Veuillez réessayer.');
+      setError(err.message || 'Email ou mot de passe incorrect');
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +33,16 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
-        {/* Logo et titre */}
+        <button
+          type="button"
+          className={styles.backLink}
+          onClick={onBackToHome}
+          disabled={isLoading}
+        >
+          <ArrowLeft size={18} aria-hidden />
+          Retour à l’accueil
+        </button>
+
         <div className={styles.header}>
           <div className={styles.logo}>
             <div className={styles.logoIcon}>
@@ -52,15 +52,13 @@ export default function LoginPage() {
             </div>
             <h1 className={styles.title}>MecanicHub</h1>
           </div>
-          <p className={styles.subtitle}>Gestion complète de votre atelier mécanique</p>
+          <p className={styles.subtitle}>Connexion — accès à votre espace</p>
         </div>
 
-        {/* Formulaire */}
         <div className={styles.card}>
           <h2 className={styles.heading}>Se connecter</h2>
 
           <form onSubmit={handleLogin} className={styles.form}>
-            {/* Email */}
             <div className={styles.formGroup}>
               <label htmlFor="email" className={styles.label}>
                 Email
@@ -72,10 +70,12 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="vous@exemple.com"
                 className={styles.input}
+                autoComplete="username"
+                disabled={isLoading}
+                required
               />
             </div>
 
-            {/* Mot de passe */}
             <div className={styles.formGroup}>
               <label htmlFor="password" className={styles.label}>
                 Mot de passe
@@ -88,11 +88,15 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className={styles.input}
+                  autoComplete="current-password"
+                  disabled={isLoading}
+                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className={styles.passwordToggle}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
                   {showPassword ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -109,57 +113,38 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Message d'erreur */}
-            {error && (
-              <div className={styles.error}>
-                {error}
-              </div>
-            )}
+            {error && <div className={styles.error}>{error}</div>}
 
-            {/* Se souvenir et mot de passe oublié */}
             <div className={styles.options}>
               <label className={styles.checkbox}>
-                <input
-                  type="checkbox"
-                  defaultChecked
-                />
+                <input type="checkbox" defaultChecked />
                 <span>Se souvenir de moi</span>
               </label>
-              <a href="#" className={styles.link}>
-                Mot de passe oublié?
-              </a>
+              <span className={styles.linkMuted}>Mot de passe oublié : contactez le responsable.</span>
             </div>
 
-            {/* Bouton de connexion */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={styles.submitBtn}
-            >
+            <button type="submit" disabled={isLoading} className={styles.submitBtn}>
               {isLoading ? (
                 <span className={styles.loadingState}>
-                  <span className={styles.spinner}></span>
-                  Connexion...
+                  <Loader className={styles.spinnerIcon} size={20} />
+                  Connexion…
                 </span>
               ) : (
                 'Se connecter'
               )}
             </button>
 
-            {/* Inscription */}
-            <p className={styles.signup}>
-              Pas encore de compte?{' '}
-              <a href="#" className={styles.link}>
-                Créer un compte
-              </a>
-            </p>
+            <div className={styles.hintBox}>
+              <p className={styles.hintTitle}>Comptes de démonstration</p>
+              <ul className={styles.hintList}>
+                <li><strong>Responsable</strong> (un seul compte) : responsable@atelier.com / password123</li>
+                <li><strong>Comptable</strong> : comptable@atelier.com / password123</li>
+              </ul>
+            </div>
           </form>
         </div>
 
-        {/* Footer */}
-        <p className={styles.footer}>
-          © 2026 MecanicHub. Tous droits réservés.
-        </p>
+        <p className={styles.footer}>© 2026 MecanicHub. Tous droits réservés.</p>
       </div>
     </div>
   );

@@ -11,12 +11,13 @@ class Vehicule extends Model
     use HasFactory, Notifiable;
 
     protected $fillable = [
-       'marque',
-       'modele',
-       'immat',
-       'carb',
-       'transmission',
-       'annee' 
+        'marque',
+        'modele',
+        'immat',
+        'carb',
+        'transmission',
+        'annee',
+        'client_id',
     ];
     
 

@@ -114,30 +114,38 @@ export default function ClientsList({ clients, factures, reparations, vehicules 
     return true;
   };
 
-  const handleSaveClient = () => {
+  const handleSaveClient = async () => {
     if (!validateForm()) {
       setTimeout(() => setAlertMessage(null), 3000);
       return;
     }
 
-    if (modalMode === 'create') {
-      clients.addClient(formData);
-      setAlertMessage({ type: 'success', message: 'Client créé avec succès' });
-    } else if (modalMode === 'edit') {
-      clients.updateClient(selectedClient.id, formData);
-      setAlertMessage({ type: 'success', message: 'Client modifié avec succès' });
+    try {
+      if (modalMode === 'create') {
+        await clients.addClient(formData);
+        setAlertMessage({ type: 'success', message: 'Client créé avec succès' });
+      } else if (modalMode === 'edit') {
+        await clients.updateClient(selectedClient.id, formData);
+        setAlertMessage({ type: 'success', message: 'Client modifié avec succès' });
+      }
+      handleCloseModal();
+    } catch (e) {
+      setAlertMessage({ type: 'error', message: e.message || 'Erreur lors de l’enregistrement' });
     }
-
-    handleCloseModal();
     setTimeout(() => setAlertMessage(null), 3000);
   };
 
-  const handleDeleteClient = (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.')) {
-      clients.deleteClient(id);
-      setAlertMessage({ type: 'success', message: 'Client supprimé avec succès' });
-      setTimeout(() => setAlertMessage(null), 3000);
+  const handleDeleteClient = async (id) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.')) {
+      return;
     }
+    try {
+      await clients.deleteClient(id);
+      setAlertMessage({ type: 'success', message: 'Client supprimé avec succès' });
+    } catch (e) {
+      setAlertMessage({ type: 'error', message: e.message || 'Suppression impossible' });
+    }
+    setTimeout(() => setAlertMessage(null), 3000);
   };
 
   const columns = [

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Wrench, Zap, Clock, Shield, ArrowRight } from 'lucide-react';
-import LoginModal from './LoginModal';
 import './LandingPage.css';
 
-export default function LandingPage({ onLoginSuccess }) {
-  const [showLoginModal, setShowLoginModal] = useState(false);
+export default function LandingPage({ onGoToLogin }) {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -51,10 +49,7 @@ export default function LandingPage({ onLoginSuccess }) {
             <Wrench className="logo-icon" />
             <span className="logo-text">AutoPro</span>
           </div>
-          <button
-            onClick={() => setShowLoginModal(true)}
-            className="login-button"
-          >
+          <button type="button" onClick={onGoToLogin} className="login-button">
             Se connecter
             <ArrowRight className="button-icon" />
           </button>
@@ -73,10 +68,7 @@ export default function LandingPage({ onLoginSuccess }) {
             Une solution complète pour gérer vos clients, réparations et factures
           </p>
 
-          <button
-            className="cta-button animate-fade-in-up-delay-2"
-            onClick={() => setShowLoginModal(true)}
-          >
+          <button type="button" className="cta-button animate-fade-in-up-delay-2" onClick={onGoToLogin}>
             <span>Accéder à votre tableau de bord</span>
             <ArrowRight className="cta-icon" />
           </button>
@@ -140,10 +132,7 @@ export default function LandingPage({ onLoginSuccess }) {
         <div className="cta-content">
           <h2 className="cta-title">Prêt à démarrer ?</h2>
           <p className="cta-subtitle">Connectez-vous et gérez votre atelier dès aujourd'hui</p>
-          <button
-            className="cta-button large"
-            onClick={() => setShowLoginModal(true)}
-          >
+          <button type="button" className="cta-button large" onClick={onGoToLogin}>
             <span>Se connecter maintenant</span>
             <ArrowRight className="cta-icon" />
           </button>
@@ -245,13 +234,6 @@ export default function LandingPage({ onLoginSuccess }) {
         </div>
       </footer>
 
-      {/* Login Modal */}
-      {showLoginModal && (
-        <LoginModal
-          onClose={() => setShowLoginModal(false)}
-          onLoginSuccess={onLoginSuccess}
-        />
-      )}
     </div>
   );
 }

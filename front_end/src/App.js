@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import LandingPage from './components/Landing/LandingPage';
+import LoginPage from './components/LoginPage';
 import AccountantDashboard from './components/AccountantDashboard';
+import WorkshopManagerDashboard from './components/Manager/WorkshopManagerDashboard';
+import { normalizeUser } from './utils/authLogin';
 
 /**
  * Main App Component
@@ -11,13 +14,14 @@ import AccountantDashboard from './components/AccountantDashboard';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  /** 'home' | 'login' — écran avant authentification */
+  const [authScreen, setAuthScreen] = useState('home');
 
-  // Check if user is already logged in (from localStorage)
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
       try {
-        const userData = JSON.parse(savedUser);
+        const userData = normalizeUser(JSON.parse(savedUser));
         setUser(userData);
         setIsAuthenticated(true);
       } catch (error) {
@@ -27,23 +31,55 @@ function App() {
   }, []);
 
   const handleLoginSuccess = (userData) => {
-    setUser(userData);
+    const normalized = normalizeUser(userData);
+    setUser(normalized);
     setIsAuthenticated(true);
-    localStorage.setItem('currentUser', JSON.stringify(userData));
+    setAuthScreen('home');
+    localStorage.setItem('currentUser', JSON.stringify(normalized));
   };
 
   const handleLogout = () => {
     setUser(null);
     setIsAuthenticated(false);
+    setAuthScreen('home');
     localStorage.removeItem('currentUser');
+  };
+
+  const renderDashboard = () => {
+    const role = user.role;
+    if (role === 'comptable' || role === 'accountant') {
+      return <AccountantDashboard user={user} onLogout={handleLogout} />;
+    }
+    if (role === 'responsable' || role === 'manager' || role === 'admin') {
+      return <WorkshopManagerDashboard user={user} onLogout={handleLogout} />;
+    }
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white p-8 gap-6">
+        <p className="text-center max-w-md">
+          Aucun tableau de bord pour le rôle « {role} ». Connectez-vous avec un compte responsable ou comptable.
+        </p>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="px-4 py-2 rounded-lg bg-white text-black font-semibold"
+        >
+          Déconnexion
+        </button>
+      </div>
+    );
   };
 
   return (
     <div className="App">
       {isAuthenticated && user ? (
-        <AccountantDashboard user={user} onLogout={handleLogout} />
+        renderDashboard()
+      ) : authScreen === 'login' ? (
+        <LoginPage
+          onLoginSuccess={handleLoginSuccess}
+          onBackToHome={() => setAuthScreen('home')}
+        />
       ) : (
-        <LandingPage onLoginSuccess={handleLoginSuccess} />
+        <LandingPage onGoToLogin={() => setAuthScreen('login')} />
       )}
     </div>
   );

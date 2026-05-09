@@ -9,37 +9,27 @@ import {
 } from 'lucide-react';
 import {
   MetricCard,
-  Card
+  Card,
+  Alert,
+  Spinner
 } from './common/UIComponents';
 import {
   formatCurrency,
   calculateFinancialMetrics,
   getRepairsOverview
 } from '../utils/helpers';
-import {
-  useClients,
-  useFactures,
-  useReparations,
-  useVehicules
-} from '../hooks/useManagement';
+import { useAccountantApi } from '../hooks/useAccountantApi';
 import ClientsList from './Accountant/ClientsList';
 import InvoicesList from './Accountant/InvoicesList';
 import FinancialReport from './Accountant/FinancialReport';
 
 /**
- * Main Accountant Dashboard Component
- * Shows financial overview and provides access to all accountant features
+ * Main Accountant Dashboard — données chargées depuis l’API Laravel.
  */
 export default function AccountantDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
+  const { clients, factures, reparations, vehicules, loading, error, clearError, refresh } = useAccountantApi(user);
 
-  // Use all management hooks
-  const clients = useClients();
-  const factures = useFactures();
-  const reparations = useReparations();
-  const vehicules = useVehicules();
-
-  // Calculate financial metrics
   const financialMetrics = calculateFinancialMetrics(
     factures.factures,
     reparations.reparations
@@ -47,9 +37,17 @@ export default function AccountantDashboard({ user, onLogout }) {
 
   const repairsOverview = getRepairsOverview(reparations.reparations);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center gap-4">
+        <Spinner />
+        <p className="text-gray-400">Chargement des données…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Header Section */}
       <div className="bg-black shadow-md border-b-2 border-white/20">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex justify-between items-start">
@@ -58,7 +56,7 @@ export default function AccountantDashboard({ user, onLogout }) {
                 Interface Comptable
               </h1>
               <p className="text-gray-300 mt-2 text-lg font-medium">
-                Gestion des factures, clients et rapports financiers
+                Gestion des factures, clients et rapports financiers (base de données)
               </p>
             </div>
             {user && (
@@ -66,11 +64,12 @@ export default function AccountantDashboard({ user, onLogout }) {
                 <div className="text-right">
                   <p className="text-white font-semibold flex items-center gap-2">
                     <User className="w-5 h-5 text-gray-300" />
-                    {user.name}
+                    {user.name || `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email}
                   </p>
                   <p className="text-gray-400 text-sm">{user.email}</p>
                 </div>
                 <button
+                  type="button"
                   onClick={onLogout}
                   className="flex items-center gap-2 px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 border-2 border-red-700 rounded-lg font-semibold transition-all duration-300"
                 >
@@ -84,9 +83,25 @@ export default function AccountantDashboard({ user, onLogout }) {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Tab Navigation */}
+        {error && (
+          <div className="mb-6">
+            <Alert type="error" message={error} onClose={clearError} />
+            <button
+              type="button"
+              onClick={() => {
+                clearError();
+                refresh().catch(() => {});
+              }}
+              className="mt-2 text-sm text-amber-300 underline"
+            >
+              Réessayer
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-1 mb-8 border-b-2 border-white/10 bg-slate-900 rounded-t-2xl p-1 shadow-sm">
           <button
+            type="button"
             onClick={() => setActiveTab('overview')}
             className={`px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
               activeTab === 'overview'
@@ -97,6 +112,7 @@ export default function AccountantDashboard({ user, onLogout }) {
             Vue d'ensemble
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('invoices')}
             className={`px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
               activeTab === 'invoices'
@@ -107,6 +123,7 @@ export default function AccountantDashboard({ user, onLogout }) {
             Factures
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('clients')}
             className={`px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
               activeTab === 'clients'
@@ -117,6 +134,7 @@ export default function AccountantDashboard({ user, onLogout }) {
             Clients
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('reports')}
             className={`px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
               activeTab === 'reports'
@@ -128,10 +146,8 @@ export default function AccountantDashboard({ user, onLogout }) {
           </button>
         </div>
 
-        {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div>
-            {/* Financial Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <MetricCard
                 label="Revenu Total (Payé)"
@@ -159,9 +175,7 @@ export default function AccountantDashboard({ user, onLogout }) {
               />
             </div>
 
-            {/* Overview Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Repairs Overview */}
               <Card>
                 <h3 className="text-xl font-bold text-white mb-6 pb-4 border-b-2 border-white/20">Aperçu des réparations</h3>
                 <div className="space-y-4">
@@ -188,7 +202,6 @@ export default function AccountantDashboard({ user, onLogout }) {
                 </div>
               </Card>
 
-              {/* Key Metrics */}
               <Card>
                 <h3 className="text-xl font-bold text-white mb-6 pb-4 border-b-2 border-white/20">Indicateurs clés</h3>
                 <div className="space-y-4">
@@ -222,7 +235,6 @@ export default function AccountantDashboard({ user, onLogout }) {
           </div>
         )}
 
-        {/* INVOICES TAB */}
         {activeTab === 'invoices' && (
           <InvoicesList
             factures={factures}
@@ -231,7 +243,6 @@ export default function AccountantDashboard({ user, onLogout }) {
           />
         )}
 
-        {/* CLIENTS TAB */}
         {activeTab === 'clients' && (
           <ClientsList
             clients={clients}
@@ -241,7 +252,6 @@ export default function AccountantDashboard({ user, onLogout }) {
           />
         )}
 
-        {/* REPORTS TAB */}
         {activeTab === 'reports' && (
           <FinancialReport
             factures={factures.factures}
@@ -249,88 +259,6 @@ export default function AccountantDashboard({ user, onLogout }) {
             clients={clients.clients}
           />
         )}
-
-        {/* Temporary Buttons for UI Testing */}
-        <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: '2px solid rgba(0,0,0,0.1)', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button 
-            onClick={() => console.log('Dashboard Temp Button 1')}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              border: '2px solid #000000',
-              background: '#ffffff',
-              color: '#000000',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#f5f5f5';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#ffffff';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            Btn Temp 1
-          </button>
-          <button 
-            onClick={() => console.log('Dashboard Temp Button 2')}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              border: '2px solid #000000',
-              background: '#ffffff',
-              color: '#000000',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#f5f5f5';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#ffffff';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            Btn Temp 2
-          </button>
-          <button 
-            onClick={() => console.log('Dashboard Temp Button 3')}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              border: '2px solid #000000',
-              background: '#ffffff',
-              color: '#000000',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#f5f5f5';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#ffffff';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            Btn Temp 3
-          </button>
-        </div>
       </div>
     </div>
   );

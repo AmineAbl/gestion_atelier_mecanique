@@ -6,34 +6,44 @@
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 
-// Utility function to make API requests
 const apiCall = async (method, endpoint, data = null) => {
-  try {
-    const options = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        // Add authentication token if available
-        // 'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-      }
-    };
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+  };
 
-    if (data) {
-      options.body = JSON.stringify(data);
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
+  if (data != null && method !== 'GET' && method !== 'DELETE') {
+    options.body = JSON.stringify(data);
   }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+  const text = await response.text();
+  let body = null;
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    let msg = `Erreur ${response.status}`;
+    if (body && typeof body === 'object') {
+      if (body.message) msg = body.message;
+      else if (body.errors) {
+        const first = Object.values(body.errors)[0];
+        msg = Array.isArray(first) ? first[0] : String(first);
+      }
+    }
+    throw new Error(msg);
+  }
+
+  if (response.status === 204) return null;
+  return body;
 };
 
 // ============= CLIENTS API =============
@@ -125,8 +135,32 @@ export const reportsAPI = {
 
 // ============= AUTHENTICATION API (Optional) =============
 
+export const piecesAPI = {
+  getAll: () => apiCall('GET', '/pieces'),
+  getById: (id) => apiCall('GET', `/pieces/${id}`),
+  create: (data) => apiCall('POST', '/pieces', data),
+  update: (id, data) => apiCall('PUT', `/pieces/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/pieces/${id}`),
+};
+
+export const mecaniciensAPI = {
+  getAll: () => apiCall('GET', '/mecaniciens'),
+  getById: (id) => apiCall('GET', `/mecaniciens/${id}`),
+  create: (data) => apiCall('POST', '/mecaniciens', data),
+  update: (id, data) => apiCall('PUT', `/mecaniciens/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/mecaniciens/${id}`),
+};
+
+export const comptablesAPI = {
+  getAll: () => apiCall('GET', '/comptables'),
+  getById: (id) => apiCall('GET', `/comptables/${id}`),
+  create: (data) => apiCall('POST', '/comptables', data),
+  update: (id, data) => apiCall('PUT', `/comptables/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/comptables/${id}`),
+};
+
 export const authAPI = {
-  login: (email, password) => 
+  login: (email, password) =>
     apiCall('POST', '/auth/login', { email, password }),
   
   logout: () => 
@@ -139,11 +173,16 @@ export const authAPI = {
     apiCall('PUT', '/auth/profile', data)
 };
 
-export default {
+const apiServices = {
   clientsAPI,
   facturesAPI,
   reparationsAPI,
   vehiculesAPI,
+  piecesAPI,
+  mecaniciensAPI,
+  comptablesAPI,
   reportsAPI,
-  authAPI
+  authAPI,
 };
+
+export default apiServices;

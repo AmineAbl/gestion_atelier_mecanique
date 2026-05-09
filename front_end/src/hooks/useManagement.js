@@ -149,7 +149,7 @@ export const useReparations = () => {
  * Hook for managing Vehicules
  */
 export const useVehicules = () => {
-  const [vehicules, setVehicules] = useState(mockVehicules);
+  const [vehicules] = useState(mockVehicules);
 
   const getVehiculesByClient = useCallback((clientId) => {
     return vehicules.filter(v => v.clientId === clientId);

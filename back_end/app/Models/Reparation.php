@@ -11,28 +11,35 @@ class Reparation extends Model
     use HasFactory, Notifiable;
 
     protected $fillable = [
-       'descrpition',
-       'statut',
-       'date_debut',
-       'date_fin',
-       'date_prevue_fin',
-       'cout'
+        'description',
+        'statut',
+        'date_debut',
+        'date_fin',
+        'date_prevue_fin',
+        'cout',
+        'vehicule_id',
+        'user_id',
     ];
 
-
-    public function vehicules(){
+    public function vehicule()
+    {
         return $this->belongsTo(Vehicule::class);
     }
 
-    public function users(){
-        return $this->belongsTo(User::class);
+    public function mecanicien()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function factures(){
-        return $this->belongsTo(Facture::class);
+    public function facture()
+    {
+        return $this->hasOne(Facture::class);
     }
 
-    public function pieces(){
-        return $this->belongsToMany(Piece::class);
+    public function pieces()
+    {
+        return $this->belongsToMany(Piece::class, 'reparation_pieces')
+            ->withPivot('quantite', 'prix_utilise')
+            ->withTimestamps();
     }
 }

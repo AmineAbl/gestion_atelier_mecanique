@@ -3,23 +3,52 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Un seul utilisateur avec le rôle responsable (voir AppServiceProvider).
+        User::query()->updateOrCreate(
+            ['email' => 'responsable@atelier.com'],
+            [
+                'nom' => 'Admin',
+                'prenom' => 'Responsable',
+                'mdp' => Hash::make('password123'),
+                'role' => 'responsable',
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::query()->updateOrCreate(
+            ['email' => 'comptable@atelier.com'],
+            [
+                'nom' => 'Compta',
+                'prenom' => 'Jean',
+                'mdp' => Hash::make('password123'),
+                'role' => 'comptable',
+            ]
+        );
+
+        User::query()->updateOrCreate(
+            ['email' => 'mecanicien@atelier.com'],
+            [
+                'nom' => 'Garage',
+                'prenom' => 'Paul',
+                'mdp' => Hash::make('password123'),
+                'role' => 'mecanicien',
+            ]
+        );
+
+        User::query()->updateOrCreate(
+            ['email' => 'mecanicien2@atelier.com'],
+            [
+                'nom' => 'Dupont',
+                'prenom' => 'Marc',
+                'mdp' => Hash::make('password123'),
+                'role' => 'mecanicien',
+            ]
+        );
     }
 }

@@ -44,6 +44,22 @@ export default function InvoicesList({ factures, clients, reparations }) {
     date_validation: ''
   });
 
+  const reparationOptions = useMemo(() => {
+    const clientId = formData.clientId;
+    if (!clientId) return [];
+    const taken = new Set(
+      factures.factures
+        .filter((f) => modalMode !== 'edit' || !selectedFacture || f.id !== selectedFacture.id)
+        .map((f) => Number(f.reparationId))
+    );
+    return reparations.filter((r) => {
+      if (String(r.clientId) !== String(clientId)) return false;
+      const rid = Number(r.id);
+      if (taken.has(rid) && rid !== Number(formData.reparationId)) return false;
+      return true;
+    });
+  }, [formData.clientId, formData.reparationId, reparations, factures.factures, modalMode, selectedFacture]);
+
   // Filter and search factures
   const filteredFactures = useMemo(() => {
     let result = factures.factures;
@@ -80,7 +96,13 @@ export default function InvoicesList({ factures, clients, reparations }) {
     setModalMode(mode);
     if (facture) {
       setSelectedFacture(facture);
-      setFormData(facture);
+      setFormData({
+        ...facture,
+        clientId: facture.clientId != null ? String(facture.clientId) : '',
+        reparationId: facture.reparationId != null ? String(facture.reparationId) : '',
+        total_piece: facture.total_piece,
+        date_validation: facture.date_validation || '',
+      });
     } else {
       setFormData({
         clientId: '',
@@ -103,40 +125,50 @@ export default function InvoicesList({ factures, clients, reparations }) {
   const handleFormChange = (field, value) => {
     const updatedForm = { ...formData, [field]: value };
 
+    if (field === 'clientId') {
+      updatedForm.reparationId = '';
+    }
+
     // Auto-calculate prix_total if cout changes
     if (field === 'cout' || field === 'total_piece') {
-      const cout = field === 'cout' ? parseFloat(value) || 0 : parseFloat(formData.cout) || 0;
+      const cout = field === 'cout' ? parseFloat(value) || 0 : parseFloat(updatedForm.cout) || 0;
       updatedForm.prix_total = cout * 1.20; // Add 20% tax
     }
 
     setFormData(updatedForm);
   };
 
-  const handleSaveFacture = () => {
-    // Validation
+  const handleSaveFacture = async () => {
     if (!formData.clientId || !formData.reparationId || !formData.cout) {
       setAlertMessage({ type: 'error', message: 'Veuillez remplir tous les champs obligatoires' });
+      setTimeout(() => setAlertMessage(null), 3000);
       return;
     }
 
-    if (modalMode === 'create') {
-      factures.addFacture(formData);
-      setAlertMessage({ type: 'success', message: 'Facture créée avec succès' });
-    } else if (modalMode === 'edit') {
-      factures.updateFacture(selectedFacture.id, formData);
-      setAlertMessage({ type: 'success', message: 'Facture modifiée avec succès' });
+    try {
+      if (modalMode === 'create') {
+        await factures.addFacture(formData);
+        setAlertMessage({ type: 'success', message: 'Facture créée avec succès' });
+      } else if (modalMode === 'edit') {
+        await factures.updateFacture(selectedFacture.id, formData);
+        setAlertMessage({ type: 'success', message: 'Facture modifiée avec succès' });
+      }
+      handleCloseModal();
+    } catch (e) {
+      setAlertMessage({ type: 'error', message: e.message || 'Erreur lors de l’enregistrement' });
     }
-
-    handleCloseModal();
     setTimeout(() => setAlertMessage(null), 3000);
   };
 
-  const handleDeleteFacture = (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) {
-      factures.deleteFacture(id);
+  const handleDeleteFacture = async (id) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) return;
+    try {
+      await factures.deleteFacture(id);
       setAlertMessage({ type: 'success', message: 'Facture supprimée avec succès' });
-      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (e) {
+      setAlertMessage({ type: 'error', message: e.message || 'Suppression impossible' });
     }
+    setTimeout(() => setAlertMessage(null), 3000);
   };
 
   const handleExportCSV = () => {
@@ -299,7 +331,7 @@ export default function InvoicesList({ factures, clients, reparations }) {
                 value={formData.clientId}
                 onChange={(e) => handleFormChange('clientId', e.target.value)}
                 options={clients.map(c => ({
-                  value: c.id,
+                  value: String(c.id),
                   label: `${c.prenom} ${c.nom}`
                 }))}
                 required
@@ -309,8 +341,8 @@ export default function InvoicesList({ factures, clients, reparations }) {
                 label="Réparation"
                 value={formData.reparationId}
                 onChange={(e) => handleFormChange('reparationId', e.target.value)}
-                options={reparations.map(r => ({
-                  value: r.id,
+                options={reparationOptions.map(r => ({
+                  value: String(r.id),
                   label: r.description
                 }))}
                 required

@@ -11,9 +11,10 @@ class Client extends Model
     use HasFactory, Notifiable;
 
     protected $fillable = [
-       'nom',
-       'prenom',
-       'telephone'
+        'nom',
+        'prenom',
+        'telephone',
+        'email',
     ];
 
     public function vehicules()
@@ -23,7 +24,7 @@ class Client extends Model
 
     public function reparations()
     {
-        return $this->hasMany(Reparation::class);
+        return $this->hasManyThrough(Reparation::class, Vehicule::class);
     }
 
 

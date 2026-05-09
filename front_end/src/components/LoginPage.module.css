@@ -15,6 +15,67 @@
   max-width: 448px;
 }
 
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  color: #1e40af;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.backLink:hover:not(:disabled) {
+  color: #1e3a8a;
+  text-decoration: underline;
+}
+
+.backLink:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.linkMuted {
+  color: #9ca3af;
+  font-size: 12px;
+  max-width: 58%;
+  text-align: right;
+  line-height: 1.3;
+}
+
+.hintBox {
+  margin-top: 8px;
+  padding: 12px 14px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #0c4a6e;
+}
+
+.hintTitle {
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.hintList {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.hintList li {
+  margin-bottom: 6px;
+}
+
+.spinnerIcon {
+  animation: spin 0.6s linear infinite;
+}
+
 /* Logo et titre */
 .header {
   text-align: center;
@@ -145,8 +206,10 @@
 /* Options (checkbox + lien) */
 .options {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   font-size: 14px;
 }
 
