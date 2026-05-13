@@ -1,525 +1,188 @@
 /**
- * ============================================================
- * API SERVICE - COMPLETE IMPLEMENTATION
- * ============================================================
- * 
- * Purpose: Centralized API communication service for all backend requests
- * 
- * Features:
- * - Base URL configuration pointing to Laravel API
- * - Automatic token injection in headers
- * - Error handling and response formatting
- * - CRUD operations for all entities
- * - Authentication management
- * - Token-based API authentication with Laravel Sanctum
- * 
- * Base URL: http://localhost:8000/api
- * All requests include Authorization header with Bearer token when available
+ * API Service Layer
+ * This file will handle all API calls to the Laravel backend
+ * Currently using mock data - replace fetch calls to use real endpoints
  */
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 
-/**
- * Get authorization token from localStorage
- * @returns {string|null} Bearer token or null if not logged in
- */
-const getAuthToken = () => localStorage.getItem('auth_token');
-
-/**
- * Build headers with authorization token
- * @returns {object} Fetch headers object with Content-Type and Authorization
- */
-const getHeaders = (includeAuth = true) => {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+const apiCall = async (method, endpoint, data = null) => {
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
   };
 
-  if (includeAuth) {
-    const token = getAuthToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+  if (data != null && method !== 'GET' && method !== 'DELETE') {
+    options.body = JSON.stringify(data);
   }
 
-  return headers;
-};
-
-/**
- * Handle API response errors consistently
- * @param {Response} response - Fetch response object
- * @returns {Promise} Resolved data or rejected error
- */
-const handleResponse = async (response) => {
-  const data = await response.json();
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+  const text = await response.text();
+  let body = null;
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
 
   if (!response.ok) {
-    throw {
-      status: response.status,
-      message: data.message || 'An error occurred',
-      errors: data.errors || {},
-      data
-    };
-  }
-
-  return data;
-};
-
-/**
- * ============================================================
- * AUTHENTICATION API
- * ============================================================
- * Handles user login, logout, and session management
- */
-
-export const authAPI = {
-  /**
-   * Login with email and password
-   * @param {string} email - User email
-   * @param {string} password - User password
-   * @returns {Promise} User data and auth token
-   */
-  login: async (email, password) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: getHeaders(false),
-        body: JSON.stringify({ email, password })
-      });
-
-      const result = await handleResponse(response);
-
-      // Store token and user data in localStorage
-      if (result.token) {
-        localStorage.setItem('auth_token', result.token);
-        localStorage.setItem('user', JSON.stringify(result.user));
+    let msg = `Erreur ${response.status}`;
+    if (body && typeof body === 'object') {
+      if (body.message) msg = body.message;
+      else if (body.errors) {
+        const first = Object.values(body.errors)[0];
+        msg = Array.isArray(first) ? first[0] : String(first);
       }
-
-      return result;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
     }
-  },
-
-  /**
-   * Logout current user
-   * @returns {Promise} Success message
-   */
-  logout: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/logout`, {
-        method: 'POST',
-        headers: getHeaders(true)
-      });
-
-      const result = await handleResponse(response);
-
-      // Clear stored credentials
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
-
-      return result;
-    } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get current authenticated user
-   * @returns {Promise} User data
-   */
-  getCurrentUser: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/user`, {
-        method: 'GET',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Get current user error:', error);
-      throw error;
-    }
+    throw new Error(msg);
   }
+
+  if (response.status === 204) return null;
+  return body;
 };
 
-/**
- * ============================================================
- * CLIENTS CRUD API
- * ============================================================
- * Handles client data management operations
- */
+// ============= CLIENTS API =============
 
 export const clientsAPI = {
-  /**
-   * Get all clients
-   * @returns {Promise} Array of clients
-   */
-  getAll: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/clients`, {
-        method: 'GET',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Get clients error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get single client by ID
-   * @param {number} id - Client ID
-   * @returns {Promise} Client data
-   */
-  getById: async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
-        method: 'GET',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Get client ${id} error:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Create new client
-   * @param {object} data - Client data (nom, prenom, telephone)
-   * @returns {Promise} Created client
-   */
-  create: async (data) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/clients`, {
-        method: 'POST',
-        headers: getHeaders(true),
-        body: JSON.stringify(data)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Create client error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Update existing client
-   * @param {number} id - Client ID
-   * @param {object} data - Updated client data
-   * @returns {Promise} Updated client
-   */
-  update: async (id, data) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
-        method: 'PUT',
-        headers: getHeaders(true),
-        body: JSON.stringify(data)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Update client ${id} error:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Delete client
-   * @param {number} id - Client ID
-   * @returns {Promise} Success message
-   */
-  delete: async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
-        method: 'DELETE',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Delete client ${id} error:`, error);
-      throw error;
-    }
-  }
+  getAll: () => apiCall('GET', '/clients'),
+  getById: (id) => apiCall('GET', `/clients/${id}`),
+  create: (data) => apiCall('POST', '/clients', data),
+  update: (id, data) => apiCall('PUT', `/clients/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/clients/${id}`)
 };
 
-/**
- * ============================================================
- * FACTURES (INVOICES) CRUD API
- * ============================================================
- * Handles invoice data management operations
- */
+// ============= FACTURES (INVOICES) API =============
 
 export const facturesAPI = {
-  /**
-   * Get all invoices
-   * @returns {Promise} Array of factures
-   */
-  getAll: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/factures`, {
-        method: 'GET',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Get factures error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get single invoice by ID
-   * @param {number} id - Facture ID
-   * @returns {Promise} Invoice data
-   */
-  getById: async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/factures/${id}`, {
-        method: 'GET',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Get facture ${id} error:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Create new invoice
-   * @param {object} data - Invoice data (total_piece, cout, prix_total, date_validation, statut)
-   * @returns {Promise} Created invoice
-   */
-  create: async (data) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/factures`, {
-        method: 'POST',
-        headers: getHeaders(true),
-        body: JSON.stringify(data)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Create facture error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Update existing invoice
-   * @param {number} id - Facture ID
-   * @param {object} data - Updated invoice data
-   * @returns {Promise} Updated invoice
-   */
-  update: async (id, data) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/factures/${id}`, {
-        method: 'PUT',
-        headers: getHeaders(true),
-        body: JSON.stringify(data)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Update facture ${id} error:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Delete invoice
-   * @param {number} id - Facture ID
-   * @returns {Promise} Success message
-   */
-  delete: async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/factures/${id}`, {
-        method: 'DELETE',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Delete facture ${id} error:`, error);
-      throw error;
-    }
-  }
+  getAll: () => apiCall('GET', '/factures'),
+  getById: (id) => apiCall('GET', `/factures/${id}`),
+  getByClient: (clientId) => apiCall('GET', `/factures?client_id=${clientId}`),
+  create: (data) => apiCall('POST', '/factures', data),
+  update: (id, data) => apiCall('PUT', `/factures/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/factures/${id}`),
+  
+  // Additional operations
+  getByStatus: (status) => apiCall('GET', `/factures?statut=${status}`),
+  getByDateRange: (startDate, endDate) => 
+    apiCall('GET', `/factures?start_date=${startDate}&end_date=${endDate}`),
+  
+  // Export operations
+  exportCSV: () => apiCall('GET', '/factures/export/csv'),
+  exportPDF: () => apiCall('GET', '/factures/export/pdf'),
 };
 
-/**
- * ============================================================
- * REPARATIONS (REPAIRS) CRUD API
- * ============================================================
- * Handles repair data management operations
- */
+// ============= REPARATIONS (REPAIRS) API =============
 
 export const reparationsAPI = {
-  /**
-   * Get all repairs
-   * @returns {Promise} Array of reparations
-   */
-  getAll: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/reparations`, {
-        method: 'GET',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Get reparations error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get single repair by ID
-   * @param {number} id - Reparation ID
-   * @returns {Promise} Repair data
-   */
-  getById: async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/reparations/${id}`, {
-        method: 'GET',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Get reparation ${id} error:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Create new repair
-   * @param {object} data - Repair data (client_id, vehicule_id, description, date_entree, date_sortie_prevue, statut)
-   * @returns {Promise} Created repair
-   */
-  create: async (data) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/reparations`, {
-        method: 'POST',
-        headers: getHeaders(true),
-        body: JSON.stringify(data)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Create reparation error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Update existing repair
-   * @param {number} id - Reparation ID
-   * @param {object} data - Updated repair data
-   * @returns {Promise} Updated repair
-   */
-  update: async (id, data) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/reparations/${id}`, {
-        method: 'PUT',
-        headers: getHeaders(true),
-        body: JSON.stringify(data)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Update reparation ${id} error:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Delete repair
-   * @param {number} id - Reparation ID
-   * @returns {Promise} Success message
-   */
-  delete: async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/reparations/${id}`, {
-        method: 'DELETE',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`Delete reparation ${id} error:`, error);
-      throw error;
-    }
-  }
+  getAll: () => apiCall('GET', '/reparations'),
+  getById: (id) => apiCall('GET', `/reparations/${id}`),
+  getByClient: (clientId) => apiCall('GET', `/reparations?client_id=${clientId}`),
+  create: (data) => apiCall('POST', '/reparations', data),
+  update: (id, data) => apiCall('PUT', `/reparations/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/reparations/${id}`),
+  
+  // Additional operations
+  getByStatus: (status) => apiCall('GET', `/reparations?statut=${status}`),
+  getByVehicle: (vehicleId) => apiCall('GET', `/reparations?vehicule_id=${vehicleId}`),
 };
 
-/**
- * ============================================================
- * DASHBOARD STATISTICS API
- * ============================================================
- * Handles dashboard metrics and analytics
- */
+// ============= VEHICULES (VEHICLES) API =============
 
-export const dashboardAPI = {
-  /**
-   * Get all dashboard statistics
-   * Returns calculated metrics for financial overview
-   * All values start at 0 for demo purposes
-   * @returns {Promise} Dashboard stats (revenue, costs, profit, rates, etc.)
-   */
-  getStats: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {
-        method: 'GET',
-        headers: getHeaders(true)
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Get dashboard stats error:', error);
-      throw error;
-    }
-  }
+export const vehiculesAPI = {
+  getAll: () => apiCall('GET', '/vehicules'),
+  getById: (id) => apiCall('GET', `/vehicules/${id}`),
+  getByClient: (clientId) => apiCall('GET', `/vehicules?client_id=${clientId}`),
+  create: (data) => apiCall('POST', '/vehicules', data),
+  update: (id, data) => apiCall('PUT', `/vehicules/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/vehicules/${id}`)
 };
 
-/**
- * ============================================================
- * UTILITY FUNCTIONS
- * ============================================================
- */
+// ============= FINANCIAL REPORTS API =============
 
-/**
- * Check if user is authenticated
- * @returns {boolean} True if auth token exists
- */
-export const isAuthenticated = () => !!getAuthToken();
-
-/**
- * Get stored user data
- * @returns {object|null} User object or null
- */
-export const getStoredUser = () => {
-  const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+export const reportsAPI = {
+  // Get financial summary
+  getSummary: (startDate, endDate) => 
+    apiCall('GET', `/reports/summary?start_date=${startDate}&end_date=${endDate}`),
+  
+  // Get monthly breakdown
+  getMonthlyBreakdown: (year, month) => 
+    apiCall('GET', `/reports/monthly?year=${year}&month=${month}`),
+  
+  // Get client statistics
+  getClientStats: (clientId) => 
+    apiCall('GET', `/reports/client/${clientId}`),
+  
+  // Get repair statistics
+  getRepairStats: () => 
+    apiCall('GET', '/reports/repairs'),
+  
+  // Get invoice statistics
+  getInvoiceStats: () => 
+    apiCall('GET', '/reports/invoices'),
+  
+  // Export reports
+  exportMonthlyPDF: (year, month) => 
+    apiCall('GET', `/reports/export/monthly?year=${year}&month=${month}`),
+  
+  exportYearlyPDF: (year) => 
+    apiCall('GET', `/reports/export/yearly?year=${year}`)
 };
 
-export default {
-  authAPI,
+// ============= AUTHENTICATION API (Optional) =============
+
+export const piecesAPI = {
+  getAll: () => apiCall('GET', '/pieces'),
+  getById: (id) => apiCall('GET', `/pieces/${id}`),
+  create: (data) => apiCall('POST', '/pieces', data),
+  update: (id, data) => apiCall('PUT', `/pieces/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/pieces/${id}`),
+};
+
+export const mecaniciensAPI = {
+  getAll: () => apiCall('GET', '/mecaniciens'),
+  getById: (id) => apiCall('GET', `/mecaniciens/${id}`),
+  create: (data) => apiCall('POST', '/mecaniciens', data),
+  update: (id, data) => apiCall('PUT', `/mecaniciens/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/mecaniciens/${id}`),
+};
+
+export const comptablesAPI = {
+  getAll: () => apiCall('GET', '/comptables'),
+  getById: (id) => apiCall('GET', `/comptables/${id}`),
+  create: (data) => apiCall('POST', '/comptables', data),
+  update: (id, data) => apiCall('PUT', `/comptables/${id}`, data),
+  delete: (id) => apiCall('DELETE', `/comptables/${id}`),
+};
+
+export const authAPI = {
+  login: (email, password) =>
+    apiCall('POST', '/auth/login', { email, password }),
+  
+  logout: () => 
+    apiCall('POST', '/auth/logout'),
+  
+  getProfile: () => 
+    apiCall('GET', '/auth/profile'),
+  
+  updateProfile: (data) => 
+    apiCall('PUT', '/auth/profile', data)
+};
+
+const apiServices = {
   clientsAPI,
   facturesAPI,
   reparationsAPI,
-  dashboardAPI,
-  isAuthenticated,
-  getStoredUser
+  vehiculesAPI,
+  piecesAPI,
+  mecaniciensAPI,
+  comptablesAPI,
+  reportsAPI,
+  authAPI,
 };
 
+export default apiServices;

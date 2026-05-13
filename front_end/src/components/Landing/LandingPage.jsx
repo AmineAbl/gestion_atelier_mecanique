@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, Zap, Clock, Shield, ArrowRight, BarChart3, TrendingUp, Lock, Gauge } from 'lucide-react';
+import { Wrench, Zap, Clock, Shield, ArrowRight, Gauge, TrendingUp, Lock } from 'lucide-react';
 import LoginModal from './LoginModal';
-import { Footer } from '../common/Footer';
-import { CountUp } from '../common/CountUp';
 import './LandingPage.css';
 
-export default function LandingPage({ onLoginSuccess }) {
-  const [showLoginModal, setShowLoginModal] = useState(false);
+export default function LandingPage({ onGoToLogin }) {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -54,10 +51,7 @@ export default function LandingPage({ onLoginSuccess }) {
             <Wrench className="logo-icon" />
             <span className="logo-text">AutoPro</span>
           </div>
-          <button
-            onClick={() => setShowLoginModal(true)}
-            className="login-button"
-          >
+          <button type="button" onClick={onGoToLogin} className="login-button">
             Se connecter
             <ArrowRight className="button-icon" />
           </button>
@@ -76,10 +70,7 @@ export default function LandingPage({ onLoginSuccess }) {
             La plateforme tout-en-un pour gérer réparations, clients, factures et finances. Augmentez votre productivité, réduisez vos coûts.
           </p>
 
-          <button
-            className="cta-button animate-fade-in-up-delay-2"
-            onClick={() => setShowLoginModal(true)}
-          >
+          <button type="button" className="cta-button animate-fade-in-up-delay-2" onClick={onGoToLogin}>
             <span>Accéder à votre tableau de bord</span>
             <ArrowRight className="cta-icon" />
           </button>
@@ -144,13 +135,13 @@ export default function LandingPage({ onLoginSuccess }) {
       {/* CTA Section */}
       <section className="cta-section animate-fade-in">
         <div className="cta-content">
-          <h2 className="cta-title">Commencez Gratuitement</h2>
-          <p className="cta-subtitle">Essayez pendant 30 jours. Aucune carte requise. Annulez à tout moment.</p>
+          <h2 className="cta-title">Prêt à démarrer ?</h2>
+          <p className="cta-subtitle">Connectez-vous et gérez votre atelier dès aujourd'hui</p>
           <button
             className="cta-button large"
             onClick={() => setShowLoginModal(true)}
           >
-            <span>Accès gratuit maintenant</span>
+            <span>Se connecter maintenant</span>
             <ArrowRight className="cta-icon" />
           </button>
         </div>
@@ -175,13 +166,6 @@ export default function LandingPage({ onLoginSuccess }) {
       {/* Footer */}
       <Footer />
 
-      {/* Login Modal */}
-      {showLoginModal && (
-        <LoginModal
-          onClose={() => setShowLoginModal(false)}
-          onLoginSuccess={onLoginSuccess}
-        />
-      )}
     </div>
   );
 }

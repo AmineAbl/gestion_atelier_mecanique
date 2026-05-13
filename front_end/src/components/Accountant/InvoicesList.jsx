@@ -23,14 +23,11 @@ import {
   generateInvoiceNumber
 } from '../../utils/helpers';
 
-import { useTheme } from '../../context/ThemeContext';
-
 /**
  * Invoices Management Component
  * CRUD operations for Factures (Invoices)
  */
 export default function InvoicesList({ factures, clients, reparations }) {
-  const { isDark } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
   const [selectedFacture, setSelectedFacture] = useState(null);
@@ -46,6 +43,22 @@ export default function InvoicesList({ factures, clients, reparations }) {
     statut: 'pending',
     date_validation: ''
   });
+
+  const reparationOptions = useMemo(() => {
+    const clientId = formData.clientId;
+    if (!clientId) return [];
+    const taken = new Set(
+      factures.factures
+        .filter((f) => modalMode !== 'edit' || !selectedFacture || f.id !== selectedFacture.id)
+        .map((f) => Number(f.reparationId))
+    );
+    return reparations.filter((r) => {
+      if (String(r.clientId) !== String(clientId)) return false;
+      const rid = Number(r.id);
+      if (taken.has(rid) && rid !== Number(formData.reparationId)) return false;
+      return true;
+    });
+  }, [formData.clientId, formData.reparationId, reparations, factures.factures, modalMode, selectedFacture]);
 
   // Filter and search factures
   const filteredFactures = useMemo(() => {
@@ -83,16 +96,22 @@ export default function InvoicesList({ factures, clients, reparations }) {
     setModalMode(mode);
     if (facture) {
       setSelectedFacture(facture);
-      setFormData(facture);
+      setFormData({
+        ...facture,
+        clientId: facture.clientId != null ? String(facture.clientId) : '',
+        reparationId: facture.reparationId != null ? String(facture.reparationId) : '',
+        total_piece: facture.total_piece,
+        date_validation: facture.date_validation || '',
+      });
     } else {
       setFormData({
-        clientId: clients.length > 0 ? clients[0].id : '',
-        reparationId: reparations.length > 0 ? reparations[0].id : '',
+        clientId: '',
+        reparationId: '',
         total_piece: 0,
         cout: 0,
         prix_total: 0,
         statut: 'pending',
-        date_validation: new Date().toISOString().split('T')[0]
+        date_validation: ''
       });
     }
     setShowModal(true);
@@ -106,9 +125,13 @@ export default function InvoicesList({ factures, clients, reparations }) {
   const handleFormChange = (field, value) => {
     const updatedForm = { ...formData, [field]: value };
 
+    if (field === 'clientId') {
+      updatedForm.reparationId = '';
+    }
+
     // Auto-calculate prix_total if cout changes
     if (field === 'cout' || field === 'total_piece') {
-      const cout = field === 'cout' ? parseFloat(value) || 0 : parseFloat(formData.cout) || 0;
+      const cout = field === 'cout' ? parseFloat(value) || 0 : parseFloat(updatedForm.cout) || 0;
       updatedForm.prix_total = cout * 1.20; // Add 20% tax
     }
 
@@ -116,9 +139,9 @@ export default function InvoicesList({ factures, clients, reparations }) {
   };
 
   const handleSaveFacture = async () => {
-    // Validation
     if (!formData.clientId || !formData.reparationId || !formData.cout) {
       setAlertMessage({ type: 'error', message: 'Veuillez remplir tous les champs obligatoires' });
+      setTimeout(() => setAlertMessage(null), 3000);
       return;
     }
 
@@ -131,116 +154,21 @@ export default function InvoicesList({ factures, clients, reparations }) {
         setAlertMessage({ type: 'success', message: 'Facture modifiée avec succès' });
       }
       handleCloseModal();
-    } catch (err) {
-      console.error(err);
-      setAlertMessage({ type: 'error', message: err.message || 'Erreur lors de la sauvegarde' });
+    } catch (e) {
+      setAlertMessage({ type: 'error', message: e.message || 'Erreur lors de l’enregistrement' });
     }
-
     setTimeout(() => setAlertMessage(null), 3000);
   };
 
-  const handlePrintFacture = (facture) => {
-    const clientName = getClientName(facture.clientId);
-    const reparationDesc = getReparationDescription(facture.reparationId);
-    const invoiceNumber = generateInvoiceNumber(facture.id, facture.date_validation);
-    
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Facture ${invoiceNumber}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
-            .title { font-size: 28px; font-weight: bold; color: #1e3a8a; }
-            .invoice-details { text-align: right; }
-            .row { display: flex; justify-content: space-between; margin-bottom: 15px; }
-            .label { font-weight: bold; color: #666; }
-            .value { font-weight: 500; }
-            .table-container { margin-top: 40px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background-color: #f8fafc; color: #333; }
-            .total-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; text-align: right; }
-            .total-row { display: flex; justify-content: flex-end; margin-bottom: 10px; font-size: 16px; }
-            .total-row.grand-total { font-size: 20px; font-weight: bold; color: #1e3a8a; }
-            .total-label { width: 150px; }
-            .footer { margin-top: 60px; text-align: center; color: #888; font-size: 14px; border-top: 1px solid #eee; padding-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div>
-              <div class="title">FACTURE</div>
-              <p>Atelier Mécanique</p>
-            </div>
-            <div class="invoice-details">
-              <p><span class="label">Numéro:</span> <span class="value">${invoiceNumber}</span></p>
-              <p><span class="label">Date:</span> <span class="value">${formatDate(facture.date_validation)}</span></p>
-              <p><span class="label">Statut:</span> <span class="value">${facture.statut === 'paid' ? 'Payée' : facture.statut === 'pending' ? 'En attente' : 'Annulée'}</span></p>
-            </div>
-          </div>
-          
-          <div style="margin-bottom: 40px;">
-            <h3>Facturé à:</h3>
-            <p class="value" style="font-size: 18px;">${clientName}</p>
-          </div>
-
-          <div class="table-container">
-            <h3>Détails de la prestation</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Description</th>
-                  <th>Pièces</th>
-                  <th style="text-align: right;">Montant HT</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>${reparationDesc}</td>
-                  <td>${facture.total_piece}</td>
-                  <td style="text-align: right;">${formatCurrency(facture.cout)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="total-section">
-            <div class="total-row">
-              <div class="total-label">Total HT:</div>
-              <div>${formatCurrency(facture.cout)}</div>
-            </div>
-            <div class="total-row">
-              <div class="total-label">TVA (20%):</div>
-              <div>${formatCurrency(facture.prix_total - facture.cout)}</div>
-            </div>
-            <div class="total-row grand-total">
-              <div class="total-label">Total TTC:</div>
-              <div>${formatCurrency(facture.prix_total)}</div>
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p>Merci pour votre confiance.</p>
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    // Use timeout to let styles load
-    setTimeout(() => {
-      printWindow.print();
-    }, 500);
-  };
-
-  const handleDeleteFacture = (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) {
-      factures.deleteFacture(id);
+  const handleDeleteFacture = async (id) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) return;
+    try {
+      await factures.deleteFacture(id);
       setAlertMessage({ type: 'success', message: 'Facture supprimée avec succès' });
-      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (e) {
+      setAlertMessage({ type: 'error', message: e.message || 'Suppression impossible' });
     }
+    setTimeout(() => setAlertMessage(null), 3000);
   };
 
   const handleExportCSV = () => {
@@ -340,7 +268,7 @@ export default function InvoicesList({ factures, clients, reparations }) {
         />
       )}
 
-      <Card className="mb-6">
+      <Card className="mb-6 shadow-md">
         <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
           <div className="flex-1">
             <input
@@ -348,21 +276,13 @@ export default function InvoicesList({ factures, clients, reparations }) {
               placeholder="Rechercher par client ou numéro..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 ${
-                isDark 
-                  ? 'bg-slate-800 border-white/10 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/50' 
-                  : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-200'
-              }`}
+              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className={`px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 appearance-none ${
-              isDark 
-                ? 'bg-slate-800 border-white/10 text-white focus:border-blue-500 focus:ring-blue-500/50' 
-                : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-200'
-            }`}
+            className="px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300 bg-white"
           >
             <option value="">Tous les statuts</option>
             <option value="paid">Payée</option>
@@ -411,7 +331,7 @@ export default function InvoicesList({ factures, clients, reparations }) {
                 value={formData.clientId}
                 onChange={(e) => handleFormChange('clientId', e.target.value)}
                 options={clients.map(c => ({
-                  value: c.id,
+                  value: String(c.id),
                   label: `${c.prenom} ${c.nom}`
                 }))}
                 required
@@ -421,8 +341,8 @@ export default function InvoicesList({ factures, clients, reparations }) {
                 label="Réparation"
                 value={formData.reparationId}
                 onChange={(e) => handleFormChange('reparationId', e.target.value)}
-                options={reparations.map(r => ({
-                  value: r.id,
+                options={reparationOptions.map(r => ({
+                  value: String(r.id),
                   label: r.description
                 }))}
                 required
@@ -431,24 +351,22 @@ export default function InvoicesList({ factures, clients, reparations }) {
               <Input
                 label="Nombre de pièces"
                 type="number"
-                min="0"
                 value={formData.total_piece}
                 onChange={(e) => handleFormChange('total_piece', e.target.value)}
                 required
               />
 
               <Input
-                label="Montant HT (MAD)"
+                label="Montant HT (€)"
                 type="number"
                 step="0.01"
-                min="0"
                 value={formData.cout}
                 onChange={(e) => handleFormChange('cout', e.target.value)}
                 required
               />
 
-              <div className={`p-3 rounded-lg ${isDark ? 'bg-blue-900/30 border border-blue-800' : 'bg-blue-50'}`}>
-                <p className={`text-sm ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-700">
                   <strong>Total TTC (20% TVA incluse):</strong> {formatCurrency(formData.prix_total)}
                 </p>
               </div>
@@ -485,48 +403,45 @@ export default function InvoicesList({ factures, clients, reparations }) {
           {modalMode === 'view' && selectedFacture && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Client</p>
-                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{getClientName(selectedFacture.clientId)}</p>
+                <div>
+                  <p className="text-sm text-gray-600">Client</p>
+                  <p className="font-semibold">{getClientName(selectedFacture.clientId)}</p>
                 </div>
-                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Facture #</p>
-                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <div>
+                  <p className="text-sm text-gray-600">Facture #</p>
+                  <p className="font-semibold">
                     {generateInvoiceNumber(selectedFacture.id, selectedFacture.date_validation)}
                   </p>
                 </div>
-                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Réparation</p>
-                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{getReparationDescription(selectedFacture.reparationId)}</p>
+                <div>
+                  <p className="text-sm text-gray-600">Réparation</p>
+                  <p className="font-semibold">{getReparationDescription(selectedFacture.reparationId)}</p>
                 </div>
-                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Statut</p>
+                <div>
+                  <p className="text-sm text-gray-600">Statut</p>
                   <p className="font-semibold"><StatusBadge status={selectedFacture.statut} /></p>
                 </div>
-                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Montant HT</p>
-                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{formatCurrency(selectedFacture.cout)}</p>
+                <div>
+                  <p className="text-sm text-gray-600">Montant HT</p>
+                  <p className="font-semibold">{formatCurrency(selectedFacture.cout)}</p>
                 </div>
-                <div className={`p-3 rounded ${isDark ? 'bg-blue-900/30 border border-blue-800' : 'bg-blue-50'}`}>
-                  <p className={`text-sm ${isDark ? 'text-blue-400' : 'text-gray-600'}`}>Total TTC</p>
-                  <p className={`font-semibold text-lg ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                <div>
+                  <p className="text-sm text-gray-600">Total TTC</p>
+                  <p className="font-semibold text-lg text-blue-600">
                     {formatCurrency(selectedFacture.prix_total)}
                   </p>
                 </div>
-                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Date de validation</p>
-                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{formatDate(selectedFacture.date_validation)}</p>
+                <div>
+                  <p className="text-sm text-gray-600">Date de validation</p>
+                  <p className="font-semibold">{formatDate(selectedFacture.date_validation)}</p>
                 </div>
-                <div className={`p-3 rounded ${isDark ? 'bg-slate-800 border border-white/10' : 'bg-gray-50'}`}>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Nombre de pièces</p>
-                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedFacture.total_piece}</p>
+                <div>
+                  <p className="text-sm text-gray-600">Nombre de pièces</p>
+                  <p className="font-semibold">{selectedFacture.total_piece}</p>
                 </div>
               </div>
 
               <div className="flex gap-3 justify-end pt-4">
-                <Button onClick={() => handlePrintFacture(selectedFacture)} variant="secondary">
-                  <Download className="w-4 h-4 mr-2" /> Imprimer / PDF
-                </Button>
                 <Button onClick={() => handleOpenModal('edit', selectedFacture)} variant="primary">
                   <Edit2 className="w-4 h-4 mr-2" /> Modifier
                 </Button>

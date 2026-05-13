@@ -11,9 +11,10 @@ class Client extends Model
     use HasFactory, Notifiable;
 
     protected $fillable = [
-       'nom',
-       'prenom',
-       'telephone'
+        'nom',
+        'prenom',
+        'telephone',
+        'email',
     ];
 
     public function vehicules()

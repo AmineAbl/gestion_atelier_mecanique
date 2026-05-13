@@ -20,12 +20,13 @@ class Facture extends Model
        'user_id'
     ];
 
-
-    public function users(){
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 
-    public function reparations(){
-        return $this->hasOne(Reparation::class);
+    public function reparation()
+    {
+        return $this->belongsTo(Reparation::class);
     }
 }

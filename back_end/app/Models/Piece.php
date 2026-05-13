@@ -16,7 +16,10 @@ class Piece extends Model
        'quantite' 
     ];
 
-    public function reparations(){
-        return $this->belongsToMany(Reparation::class);
+    public function reparations()
+    {
+        return $this->belongsToMany(Reparation::class, 'reparation_pieces')
+            ->withPivot('quantite', 'prix_utilise')
+            ->withTimestamps();
     }
 }

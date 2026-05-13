@@ -1,109 +1,87 @@
 import React, { useState, useEffect } from 'react';
-import './styles/global.css';
 import './App.css';
 import LandingPage from './components/Landing/LandingPage';
+import LoginPage from './components/LoginPage';
 import AccountantDashboard from './components/AccountantDashboard';
-import { ThemeProvider } from './context/ThemeContext';
-import { getStoredUser } from './services/api';
+import WorkshopManagerDashboard from './components/Manager/WorkshopManagerDashboard';
+import { normalizeUser } from './utils/authLogin';
 
 /**
- * ============================================================
- * MAIN APP COMPONENT
- * ============================================================
+ * Main App Component
  * Entry point for the mechanical workshop management system
  * Manages landing page and authenticated dashboard
- * 
- * Features:
- * - Persistent authentication with localStorage
- * - Token-based API authentication (Laravel Sanctum)
- * - Theme provider wrapper for dark/light mode support
- * - Conditional rendering based on auth state
  */
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  /** 'home' | 'login' — écran avant authentification */
+  const [authScreen, setAuthScreen] = useState('home');
 
-  // Check if user is already logged in (from localStorage)
   useEffect(() => {
-    const checkAuth = () => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
       try {
-        // Check for stored auth token (set by API service on login)
-        const authToken = localStorage.getItem('auth_token');
-        const storedUser = getStoredUser();
-
-        if (authToken && storedUser) {
-          setUser(storedUser);
-          setIsAuthenticated(true);
-        }
+        const userData = normalizeUser(JSON.parse(savedUser));
+        setUser(userData);
+        setIsAuthenticated(true);
       } catch (error) {
-        console.error('Auth check error:', error);
-        // Clear invalid credentials
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
-      } finally {
-        setIsLoading(false);
+        localStorage.removeItem('currentUser');
       }
-    };
-
-    checkAuth();
+    }
   }, []);
 
-  /**
-   * Handle successful login
-   * @param {object} userData - User object from API response
-   */
   const handleLoginSuccess = (userData) => {
-    setUser(userData);
+    const normalized = normalizeUser(userData);
+    setUser(normalized);
     setIsAuthenticated(true);
-    // Token is already stored by authAPI.login()
+    setAuthScreen('home');
+    localStorage.setItem('currentUser', JSON.stringify(normalized));
   };
 
-  /**
-   * Handle user logout
-   */
   const handleLogout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
+    setAuthScreen('home');
+    localStorage.removeItem('currentUser');
   };
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  const renderDashboard = () => {
+    const role = user.role;
+    if (role === 'comptable' || role === 'accountant') {
+      return <AccountantDashboard user={user} onLogout={handleLogout} />;
+    }
+    if (role === 'responsable' || role === 'manager' || role === 'admin') {
+      return <WorkshopManagerDashboard user={user} onLogout={handleLogout} />;
+    }
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#f3f4f6'
-      }}>
-        <div style={{
-          textAlign: 'center'
-        }}>
-          <div style={{
-            fontSize: '24px',
-            fontWeight: 'bold',
-            marginBottom: '10px'
-          }}>
-            Chargement...
-          </div>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white p-8 gap-6">
+        <p className="text-center max-w-md">
+          Aucun tableau de bord pour le rôle « {role} ». Connectez-vous avec un compte responsable ou comptable.
+        </p>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="px-4 py-2 rounded-lg bg-white text-black font-semibold"
+        >
+          Déconnexion
+        </button>
       </div>
     );
-  }
+  };
 
   return (
-    <ThemeProvider>
-      <div className="App">
-        {isAuthenticated && user ? (
-          <AccountantDashboard user={user} onLogout={handleLogout} />
-        ) : (
-          <LandingPage onLoginSuccess={handleLoginSuccess} />
-        )}
-      </div>
-    </ThemeProvider>
+    <div className="App">
+      {isAuthenticated && user ? (
+        renderDashboard()
+      ) : authScreen === 'login' ? (
+        <LoginPage
+          onLoginSuccess={handleLoginSuccess}
+          onBackToHome={() => setAuthScreen('home')}
+        />
+      ) : (
+        <LandingPage onGoToLogin={() => setAuthScreen('login')} />
+      )}
+    </div>
   );
 }
 
