@@ -21,6 +21,13 @@ class Reparation extends Model
         'user_id',
     ];
 
+    protected $casts = [
+        'date_debut' => 'datetime',
+        'date_fin' => 'datetime',
+        'date_prevue_fin' => 'datetime',
+        'cout' => 'decimal:2',
+    ];
+
     public function vehicule()
     {
         return $this->belongsTo(Vehicule::class);

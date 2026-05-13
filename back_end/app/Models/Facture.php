@@ -20,6 +20,13 @@ class Facture extends Model
        'user_id'
     ];
 
+    protected $casts = [
+        'date_validation' => 'datetime',
+        'cout' => 'decimal:2',
+        'prix_total' => 'decimal:2',
+        'total_piece' => 'integer',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
