@@ -17,9 +17,13 @@ function normalizeVehicule(v) {
 }
 
 function normalizeReparation(r) {
+  // Extract clientId from nested vehicule relationship
+  // API returns: { vehicule: { client_id, client: { id, ... } }, ... }
+  const clientId = r.vehicule?.client_id ?? r.vehicule?.client?.id ?? r.client_id;
+
   return {
     ...r,
-    clientId: r.vehicule?.client_id ?? r.client_id,
+    clientId,
     vehiculeId: r.vehicule_id,
     userId: r.user_id,
   };
@@ -54,7 +58,14 @@ export function useAccountantApi(user) {
     ]);
     setClients(Array.isArray(c) ? c : []);
     setFactures(Array.isArray(f) ? f : []);
-    setReparations((Array.isArray(r) ? r : []).map(normalizeReparation));
+
+    const normalizedReparations = (Array.isArray(r) ? r : []).map(normalizeReparation);
+    // Log for debugging if needed
+    if (process.env.NODE_ENV === 'development' && normalizedReparations.length > 0) {
+      console.log('First reparation normalized:', normalizedReparations[0]);
+    }
+    setReparations(normalizedReparations);
+
     setVehicules((Array.isArray(v) ? v : []).map(normalizeVehicule));
   }, []);
 

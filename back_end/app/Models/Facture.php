@@ -17,7 +17,8 @@ class Facture extends Model
        'date_validation',
        'statut',
        'reparation_id',
-       'user_id'
+       'user_id',
+       'client_id'
     ];
 
     protected $casts = [

@@ -205,6 +205,7 @@ export const Select = ({
       <select
         value={value}
         onChange={onChange}
+        style={isDark ? { colorScheme: 'dark' } : { colorScheme: 'light' }}
         className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 appearance-none ${
           isDark 
             ? 'bg-slate-800 border-white/10 text-white focus:border-blue-500 focus:ring-blue-500/50' 

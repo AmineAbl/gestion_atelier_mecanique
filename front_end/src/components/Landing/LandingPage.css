@@ -735,6 +735,81 @@
 }
 
 /* =====================================================
+   MARQUEE SHOWCASE SECTION
+   ===================================================== */
+
+.marquee-showcase-section {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 60px 0;
+  background: transparent;
+  border: none;
+  z-index: 2;
+  overflow: visible;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+/* Top glowing border */
+.marquee-showcase-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(59, 130, 246, 0.2);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Bottom glowing border */
+.marquee-showcase-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(59, 130, 246, 0.2);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.marquee-overlay {
+  width: 100%;
+  padding: 0;
+  position: relative;
+  z-index: 3;
+}
+
+.marquee-label {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 28px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0 20px;
+}
+
+.marquee-custom {
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+  border: none;
+  width: 100%;
+  background: transparent;
+}
+
+/* =====================================================
    RESPONSIVE DESIGN
    ===================================================== */
 
@@ -777,6 +852,11 @@
   .footer-content {
     flex-direction: column;
     text-align: center;
+  }
+
+  .marquee-label {
+    font-size: 22px;
+    margin-bottom: 32px;
   }
 }
 
