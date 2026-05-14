@@ -4,6 +4,7 @@ import LandingPage from './components/Landing/LandingPage';
 import LoginPage from './components/LoginPage';
 import AccountantDashboard from './components/AccountantDashboard';
 import WorkshopManagerDashboard from './components/Manager/WorkshopManagerDashboard';
+import { ThemeProvider } from './context/ThemeContext';
 import { normalizeUser } from './utils/authLogin';
 
 /**
@@ -70,18 +71,20 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {isAuthenticated && user ? (
-        renderDashboard()
-      ) : authScreen === 'login' ? (
-        <LoginPage
-          onLoginSuccess={handleLoginSuccess}
-          onBackToHome={() => setAuthScreen('home')}
-        />
-      ) : (
-        <LandingPage onGoToLogin={() => setAuthScreen('login')} />
-      )}
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        {isAuthenticated && user ? (
+          renderDashboard()
+        ) : authScreen === 'login' ? (
+          <LoginPage
+            onLoginSuccess={handleLoginSuccess}
+            onBackToHome={() => setAuthScreen('home')}
+          />
+        ) : (
+          <LandingPage onGoToLogin={() => setAuthScreen('login')} />
+        )}
+      </div>
+    </ThemeProvider>
   );
 }
 

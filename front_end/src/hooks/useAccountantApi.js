@@ -92,12 +92,16 @@ export function useAccountantApi(user) {
       await load();
     },
     updateClient: async (id, formData) => {
-      await clientsAPI.update(id, {
+      const updateData = {
         nom: formData.nom,
         prenom: formData.prenom,
         telephone: formData.telephone,
-        email: formData.email ? formData.email : null,
-      });
+      };
+      // Only include email if it's not empty
+      if (formData.email && formData.email.trim()) {
+        updateData.email = formData.email;
+      }
+      await clientsAPI.update(id, updateData);
       await load();
     },
     deleteClient: async (id) => {

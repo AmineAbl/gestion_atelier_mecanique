@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Lock, User, Loader } from 'lucide-react';
 import { authAPI } from '../../services/api';
-import './LoginModal.css';
 
 export default function LoginModal({ onClose, onLoginSuccess }) {
   const [email, setEmail] = useState('');

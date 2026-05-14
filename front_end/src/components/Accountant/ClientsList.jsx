@@ -14,7 +14,6 @@ import {
   Table,
   Modal,
   Input,
-  StatusBadge,
   Alert,
   EmptyState
 } from '../common/UIComponents';

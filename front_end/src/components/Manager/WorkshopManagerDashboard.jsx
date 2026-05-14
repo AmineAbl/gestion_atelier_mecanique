@@ -8,6 +8,7 @@ import {
   User,
   Users,
   Wrench,
+  Settings
 } from 'lucide-react';
 import {
   Alert,
@@ -21,6 +22,10 @@ import {
   StatusBadge,
   Table,
 } from '../common/UIComponents';
+import { Footer } from '../common/Footer';
+import { ThemeToggle } from '../common/ThemeToggle';
+import { CircularMenu } from '../common/CircularMenu';
+import { useTheme } from '../../context/ThemeContext';
 import {
   clientsAPI,
   comptablesAPI,
@@ -38,16 +43,17 @@ const REPARATION_STATUTS = [
   { value: 'cancelled', label: 'Annulée' },
 ];
 
-function tabClass(isActive) {
-  return `px-5 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
+function tabClass(isActive, isDark) {
+  return `px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
     isActive
-      ? 'bg-white text-black shadow-md'
-      : 'text-gray-400 hover:text-white hover:bg-white/10'
+      ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
+      : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
   }`;
 }
 
 export default function WorkshopManagerDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
+  const { isDark } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [clients, setClients] = useState([]);
@@ -79,7 +85,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
     } catch (e) {
       setError(
         e.message ||
-          'Impossible de joindre l’API Laravel. Démarrez le serveur (php artisan serve) et vérifiez REACT_APP_API_BASE_URL.'
+          'Impossible de joindre l\'API Laravel. Demarrez le serveur (php artisan serve) et verifiez REACT_APP_API_BASE_URL.'
       );
     } finally {
       setLoading(false);
@@ -107,367 +113,158 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
     }
   };
 
+  const menuItems = [
+    { icon: LayoutDashboard, label: 'Apercu', action: 'overview' },
+    { icon: Wrench, label: 'Reparations', action: 'reparations' },
+    { icon: Users, label: 'Clients', action: 'clients' },
+    { icon: Car, label: 'Vehicules', action: 'vehicules' },
+    { icon: User, label: 'Mecaniciens', action: 'mecaniciens' },
+    { icon: Calculator, label: 'Comptables', action: 'comptables' },
+    { icon: Package, label: 'Pieces', action: 'pieces' }
+  ];
+
+  const handleMenuSelect = (item) => {
+    if (item.action) {
+      setActiveTab(item.action);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <div className="bg-black shadow-md border-b-2 border-white/20">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' : 'bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100'} flex flex-col`}>
+      <div className={`${isDark ? 'bg-black border-white/20' : 'bg-white border-gray-300'} shadow-md border-b-2`}>
+        <div className="max-w-7xl mx-auto px-6 py-8 w-full">
           <div className="flex justify-between items-start gap-4 flex-wrap">
             <div>
-              <h1 className="text-4xl font-bold text-white tracking-tight flex items-center gap-3">
+              <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} tracking-tight flex items-center gap-3`}>
                 <Wrench className="w-10 h-10 text-amber-400" />
                 Espace responsable atelier
               </h1>
-              <p className="text-gray-300 mt-2 text-lg font-medium">
+              <p className={`${isDark ? 'text-gray-300' : 'text-gray-700'} mt-2 text-lg font-medium`}>
                 Réparations, clients, véhicules, mécaniciens, comptables et pièces
               </p>
             </div>
-            {user && (
-              <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
+              {user && (
                 <div className="text-right">
-                  <p className="text-white font-semibold flex items-center gap-2 justify-end">
-                    <User className="w-5 h-5 text-gray-300" />
+                  <p className={`${isDark ? 'text-white' : 'text-gray-900'} font-semibold flex items-center gap-2 justify-end`}>
+                    <User className={`w-5 h-5 ${isDark ? 'text-gray-300' : 'text-gray-700'}`} />
                     {user.name || `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email}
                   </p>
-                  <p className="text-gray-400 text-sm">{user.email}</p>
+                  <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>{user.email}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 border-2 border-red-700 rounded-lg font-semibold transition-all duration-300"
-                >
-                  <LogOut className="w-5 h-5" />
-                  Déconnexion
-                </button>
-              </div>
-            )}
+              )}
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={onLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 border-2 border-red-700 rounded-lg font-semibold transition-all duration-300"
+              >
+                <LogOut className="w-5 h-5" />
+                Deconnexion
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {error && (
-          <Alert type="error" message={error} onClose={() => setError(null)} />
-        )}
+      <div className="flex-1 flex flex-col">
+        <div className="max-w-7xl mx-auto px-6 py-8 w-full flex-1">
+          {error && (
+            <Alert type="error" message={error} onClose={() => setError(null)} />
+          )}
 
-        <div className="flex gap-1 mb-8 border-b-2 border-white/10 bg-slate-900 rounded-t-2xl p-1 shadow-sm flex-wrap">
-          <button type="button" className={tabClass(activeTab === 'overview')} onClick={() => setActiveTab('overview')}>
-            <span className="inline-flex items-center gap-2">
-              <LayoutDashboard className="w-4 h-4" /> Vue d’ensemble
-            </span>
-          </button>
-          <button type="button" className={tabClass(activeTab === 'reparations')} onClick={() => setActiveTab('reparations')}>
-            <span className="inline-flex items-center gap-2">
-              <Wrench className="w-4 h-4" /> Réparations
-            </span>
-          </button>
-          <button type="button" className={tabClass(activeTab === 'clients')} onClick={() => setActiveTab('clients')}>
-            <span className="inline-flex items-center gap-2">
-              <Users className="w-4 h-4" /> Clients
-            </span>
-          </button>
-          <button type="button" className={tabClass(activeTab === 'vehicules')} onClick={() => setActiveTab('vehicules')}>
-            <span className="inline-flex items-center gap-2">
-              <Car className="w-4 h-4" /> Véhicules
-            </span>
-          </button>
-          <button type="button" className={tabClass(activeTab === 'mecaniciens')} onClick={() => setActiveTab('mecaniciens')}>
-            <span className="inline-flex items-center gap-2">
-              <User className="w-4 h-4" /> Mécaniciens
-            </span>
-          </button>
-          <button type="button" className={tabClass(activeTab === 'comptables')} onClick={() => setActiveTab('comptables')}>
-            <span className="inline-flex items-center gap-2">
-              <Calculator className="w-4 h-4" /> Comptables
-            </span>
-          </button>
-          <button type="button" className={tabClass(activeTab === 'pieces')} onClick={() => setActiveTab('pieces')}>
-            <span className="inline-flex items-center gap-2">
-              <Package className="w-4 h-4" /> Pièces
-            </span>
-          </button>
-        </div>
+          <div className={`flex gap-1 mb-8 border-b-2 ${isDark ? 'border-white/10 bg-slate-900' : 'border-gray-300 bg-gray-50'} rounded-t-2xl p-1 shadow-sm flex-wrap`}>
+            <button type="button" className={tabClass(activeTab === 'overview', isDark)} onClick={() => setActiveTab('overview')}>
+              <span className="inline-flex items-center gap-2">
+                <LayoutDashboard className="w-4 h-4" /> Vue d'ensemble
+              </span>
+            </button>
+            <button type="button" className={tabClass(activeTab === 'reparations', isDark)} onClick={() => setActiveTab('reparations')}>
+              <span className="inline-flex items-center gap-2">
+                <Wrench className="w-4 h-4" /> Réparations
+              </span>
+            </button>
+            <button type="button" className={tabClass(activeTab === 'clients', isDark)} onClick={() => setActiveTab('clients')}>
+              <span className="inline-flex items-center gap-2">
+                <Users className="w-4 h-4" /> Clients
+              </span>
+            </button>
+            <button type="button" className={tabClass(activeTab === 'vehicules', isDark)} onClick={() => setActiveTab('vehicules')}>
+              <span className="inline-flex items-center gap-2">
+                <Car className="w-4 h-4" /> Véhicules
+              </span>
+            </button>
+            <button type="button" className={tabClass(activeTab === 'mecaniciens', isDark)} onClick={() => setActiveTab('mecaniciens')}>
+              <span className="inline-flex items-center gap-2">
+                <User className="w-4 h-4" /> Mécaniciens
+              </span>
+            </button>
+            <button type="button" className={tabClass(activeTab === 'comptables', isDark)} onClick={() => setActiveTab('comptables')}>
+              <span className="inline-flex items-center gap-2">
+                <Calculator className="w-4 h-4" /> Comptables
+              </span>
+            </button>
+            <button type="button" className={tabClass(activeTab === 'pieces', isDark)} onClick={() => setActiveTab('pieces')}>
+              <span className="inline-flex items-center gap-2">
+                <Package className="w-4 h-4" /> Pièces
+              </span>
+            </button>
+          </div>
 
-        {loading ? (
-          <Spinner />
-        ) : (
-          <>
-            {activeTab === 'overview' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {[
-                  { label: 'Réparations', value: reparations.length, Icon: Wrench },
-                  { label: 'Clients', value: clients.length, Icon: Users },
-                  { label: 'Véhicules', value: vehicules.length, Icon: Car },
-                  { label: 'Mécaniciens', value: mecaniciens.length, Icon: User },
-                  { label: 'Comptables', value: comptables.length, Icon: Calculator },
-                  { label: 'Pièces (réf.)', value: pieces.length, Icon: Package },
-                ].map(({ label, value, Icon }) => (
-                  <Card
-                    key={label}
-                    className="bg-slate-800/90 border border-white/10 text-white"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</p>
-                        <p className="text-3xl font-bold mt-1">{value}</p>
+          {loading ? (
+            <Spinner />
+          ) : (
+            <>
+              {activeTab === 'overview' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {[
+                    { label: 'Réparations', value: reparations.length, Icon: Wrench },
+                    { label: 'Clients', value: clients.length, Icon: Users },
+                    { label: 'Véhicules', value: vehicules.length, Icon: Car },
+                    { label: 'Mécaniciens', value: mecaniciens.length, Icon: User },
+                    { label: 'Comptables', value: comptables.length, Icon: Calculator },
+                    { label: 'Pièces (réf.)', value: pieces.length, Icon: Package },
+                  ].map(({ label, value, Icon }) => (
+                    <Card
+                      key={label}
+                      className={`border ${isDark ? 'bg-slate-800/90 border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wide`}>{label}</p>
+                          <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</p>
+                        </div>
+                        <Icon className="w-10 h-10 text-amber-400/80" />
                       </div>
-                      <Icon className="w-10 h-10 text-amber-400/80" />
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {activeTab === 'clients' && (
-              <SectionCard title="Clients">
-                <div className="mb-4 flex justify-end">
-                  <Button variant="primary" onClick={() => setDialog({ resource: 'client', id: null })}>
-                    Ajouter un client
-                  </Button>
+                    </Card>
+                  ))}
                 </div>
-                {clients.length === 0 ? (
-                  <EmptyState message="Aucun client" />
-                ) : (
+              )}
+
+              {activeTab === 'reparations' && (
+                <SectionCard title="Réparations">
                   <Table
                     columns={[
-                      { key: 'nom', label: 'Nom' },
-                      { key: 'prenom', label: 'Prénom' },
-                      { key: 'telephone', label: 'Téléphone' },
+                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'description', label: 'Description', sortable: true },
+                      { key: 'statut', label: 'Statut', render: (row) => <StatusBadge status={row.statut} /> },
                       {
                         key: 'actions',
                         label: 'Actions',
                         render: (row) => (
-                          <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setDialog({ resource: 'client', id: row.id, initial: row })}>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setDialog({ type: 'edit', resource: 'reparation', data: row })}
+                              size="sm"
+                              variant="secondary"
+                            >
                               Modifier
                             </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete('client', row.id, `${row.prenom} ${row.nom}`)}>
-                              Supprimer
-                            </Button>
-                          </div>
-                        ),
-                      },
-                    ]}
-                    data={clients}
-                  />
-                )}
-              </SectionCard>
-            )}
-
-            {activeTab === 'vehicules' && (
-              <SectionCard title="Véhicules">
-                <div className="mb-4 flex justify-end">
-                  <Button variant="primary" onClick={() => setDialog({ resource: 'vehicule', id: null })}>
-                    Ajouter un véhicule
-                  </Button>
-                </div>
-                {vehicules.length === 0 ? (
-                  <EmptyState message="Aucun véhicule" />
-                ) : (
-                  <Table
-                    columns={[
-                      { key: 'immat', label: 'Immat.' },
-                      { key: 'marque', label: 'Marque' },
-                      { key: 'modele', label: 'Modèle' },
-                      {
-                        key: 'client',
-                        label: 'Client',
-                        render: (row) =>
-                          row.client ? `${row.client.prenom} ${row.client.nom}` : '—',
-                      },
-                      {
-                        key: 'actions',
-                        label: 'Actions',
-                        render: (row) => (
-                          <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setDialog({ resource: 'vehicule', id: row.id, initial: row })}>
-                              Modifier
-                            </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete('vehicule', row.id, row.immat)}>
-                              Supprimer
-                            </Button>
-                          </div>
-                        ),
-                      },
-                    ]}
-                    data={vehicules}
-                  />
-                )}
-              </SectionCard>
-            )}
-
-            {activeTab === 'mecaniciens' && (
-              <SectionCard title="Mécaniciens">
-                <div className="mb-4 flex justify-end">
-                  <Button variant="primary" onClick={() => setDialog({ resource: 'mecanicien', id: null })}>
-                    Ajouter un mécanicien
-                  </Button>
-                </div>
-                {mecaniciens.length === 0 ? (
-                  <EmptyState message="Aucun mécanicien" />
-                ) : (
-                  <Table
-                    columns={[
-                      { key: 'nom', label: 'Nom' },
-                      { key: 'prenom', label: 'Prénom' },
-                      { key: 'email', label: 'Email' },
-                      {
-                        key: 'actions',
-                        label: 'Actions',
-                        render: (row) => (
-                          <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setDialog({ resource: 'mecanicien', id: row.id, initial: row })}>
-                              Modifier
-                            </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete('mecanicien', row.id, row.email)}>
-                              Supprimer
-                            </Button>
-                          </div>
-                        ),
-                      },
-                    ]}
-                    data={mecaniciens}
-                  />
-                )}
-              </SectionCard>
-            )}
-
-            {activeTab === 'comptables' && (
-              <SectionCard title="Comptables">
-                <div className="mb-4 flex justify-end">
-                  <Button variant="primary" onClick={() => setDialog({ resource: 'comptable', id: null })}>
-                    Ajouter un comptable
-                  </Button>
-                </div>
-                {comptables.length === 0 ? (
-                  <EmptyState message="Aucun comptable" />
-                ) : (
-                  <Table
-                    columns={[
-                      { key: 'nom', label: 'Nom' },
-                      { key: 'prenom', label: 'Prénom' },
-                      { key: 'email', label: 'Email' },
-                      {
-                        key: 'actions',
-                        label: 'Actions',
-                        render: (row) => (
-                          <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setDialog({ resource: 'comptable', id: row.id, initial: row })}>
-                              Modifier
-                            </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete('comptable', row.id, row.email)}>
-                              Supprimer
-                            </Button>
-                          </div>
-                        ),
-                      },
-                    ]}
-                    data={comptables}
-                  />
-                )}
-              </SectionCard>
-            )}
-
-            {activeTab === 'pieces' && (
-              <SectionCard title="Pièces détachées">
-                <div className="mb-4 flex justify-end">
-                  <Button variant="primary" onClick={() => setDialog({ resource: 'piece', id: null })}>
-                    Ajouter une pièce
-                  </Button>
-                </div>
-                {pieces.length === 0 ? (
-                  <EmptyState message="Aucune pièce en stock" />
-                ) : (
-                  <Table
-                    columns={[
-                      { key: 'nom', label: 'Désignation' },
-                      {
-                        key: 'prix',
-                        label: 'Prix unitaire',
-                        render: (row) => formatCurrency(row.prix),
-                      },
-                      { key: 'quantite', label: 'Stock' },
-                      {
-                        key: 'actions',
-                        label: 'Actions',
-                        render: (row) => (
-                          <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setDialog({ resource: 'piece', id: row.id, initial: row })}>
-                              Modifier
-                            </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete('piece', row.id, row.nom)}>
-                              Supprimer
-                            </Button>
-                          </div>
-                        ),
-                      },
-                    ]}
-                    data={pieces}
-                  />
-                )}
-              </SectionCard>
-            )}
-
-            {activeTab === 'reparations' && (
-              <SectionCard title="Réparations">
-                <div className="mb-4 flex justify-end">
-                  <Button
-                    variant="primary"
-                    onClick={() => setDialog({ resource: 'reparation', id: null })}
-                    disabled={vehicules.length === 0 || mecaniciens.length === 0}
-                  >
-                    Nouvelle réparation
-                  </Button>
-                </div>
-                {vehicules.length === 0 || mecaniciens.length === 0 ? (
-                  <p className="text-amber-200 text-sm mb-4">
-                    Créez au moins un véhicule et un mécanicien avant d’ajouter une réparation.
-                  </p>
-                ) : null}
-                {reparations.length === 0 ? (
-                  <EmptyState message="Aucune réparation" />
-                ) : (
-                  <Table
-                    columns={[
-                      {
-                        key: 'description',
-                        label: 'Description',
-                        render: (row) => (
-                          <span className="line-clamp-2 max-w-xs">{row.description}</span>
-                        ),
-                      },
-                      {
-                        key: 'statut',
-                        label: 'Statut',
-                        render: (row) => <StatusBadge status={row.statut} />,
-                      },
-                      {
-                        key: 'vehicule',
-                        label: 'Véhicule',
-                        render: (row) =>
-                          row.vehicule ? `${row.vehicule.marque} ${row.vehicule.immat}` : '—',
-                      },
-                      {
-                        key: 'mecanicien',
-                        label: 'Mécanicien',
-                        render: (row) =>
-                          row.mecanicien
-                            ? `${row.mecanicien.prenom} ${row.mecanicien.nom}`
-                            : '—',
-                      },
-                      {
-                        key: 'cout',
-                        label: 'Coût',
-                        render: (row) => formatCurrency(row.cout),
-                      },
-                      {
-                        key: 'actions',
-                        label: 'Actions',
-                        render: (row) => (
-                          <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setDialog({ resource: 'reparation', id: row.id, initial: row })}>
-                              Modifier
-                            </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete('reparation', row.id, row.description?.slice(0, 40))}>
+                            <Button
+                              onClick={() => handleDelete('reparation', row.id, `Réparation ${row.id}`)}
+                              size="sm"
+                              variant="danger"
+                            >
                               Supprimer
                             </Button>
                           </div>
@@ -476,22 +273,226 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                     ]}
                     data={reparations}
                   />
-                )}
-              </SectionCard>
-            )}
-          </>
-        )}
+                  <Button onClick={() => setDialog({ type: 'create', resource: 'reparation' })} className="mt-4">
+                    + Ajouter Réparation
+                  </Button>
+                </SectionCard>
+              )}
+
+              {activeTab === 'clients' && (
+                <SectionCard title="Clients">
+                  <Table
+                    columns={[
+                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'prenom', label: 'Prénom', sortable: true },
+                      { key: 'nom', label: 'Nom', sortable: true },
+                      { key: 'email', label: 'Email' },
+                      { key: 'telephone', label: 'Téléphone' },
+                      {
+                        key: 'actions',
+                        label: 'Actions',
+                        render: (row) => (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setDialog({ type: 'edit', resource: 'client', data: row })}
+                              size="sm"
+                              variant="secondary"
+                            >
+                              Modifier
+                            </Button>
+                            <Button
+                              onClick={() => handleDelete('client', row.id, `Client ${row.prenom} ${row.nom}`)}
+                              size="sm"
+                              variant="danger"
+                            >
+                              Supprimer
+                            </Button>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    data={clients}
+                  />
+                  <Button onClick={() => setDialog({ type: 'create', resource: 'client' })} className="mt-4">
+                    + Ajouter Client
+                  </Button>
+                </SectionCard>
+              )}
+
+              {activeTab === 'vehicules' && (
+                <SectionCard title="Véhicules">
+                  <Table
+                    columns={[
+                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'marque', label: 'Marque', sortable: true },
+                      { key: 'modele', label: 'Modèle', sortable: true },
+                      { key: 'immatriculation', label: 'Immatriculation' },
+                      {
+                        key: 'actions',
+                        label: 'Actions',
+                        render: (row) => (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setDialog({ type: 'edit', resource: 'vehicule', data: row })}
+                              size="sm"
+                              variant="secondary"
+                            >
+                              Modifier
+                            </Button>
+                            <Button
+                              onClick={() => handleDelete('vehicule', row.id, `Véhicule ${row.immatriculation}`)}
+                              size="sm"
+                              variant="danger"
+                            >
+                              Supprimer
+                            </Button>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    data={vehicules}
+                  />
+                  <Button onClick={() => setDialog({ type: 'create', resource: 'vehicule' })} className="mt-4">
+                    + Ajouter Véhicule
+                  </Button>
+                </SectionCard>
+              )}
+
+              {activeTab === 'mecaniciens' && (
+                <SectionCard title="Mécaniciens">
+                  <Table
+                    columns={[
+                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'prenom', label: 'Prénom', sortable: true },
+                      { key: 'nom', label: 'Nom', sortable: true },
+                      { key: 'specialite', label: 'Spécialité' },
+                      {
+                        key: 'actions',
+                        label: 'Actions',
+                        render: (row) => (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setDialog({ type: 'edit', resource: 'mecanicien', data: row })}
+                              size="sm"
+                              variant="secondary"
+                            >
+                              Modifier
+                            </Button>
+                            <Button
+                              onClick={() => handleDelete('mecanicien', row.id, `Mécanicien ${row.prenom} ${row.nom}`)}
+                              size="sm"
+                              variant="danger"
+                            >
+                              Supprimer
+                            </Button>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    data={mecaniciens}
+                  />
+                  <Button onClick={() => setDialog({ type: 'create', resource: 'mecanicien' })} className="mt-4">
+                    + Ajouter Mécanicien
+                  </Button>
+                </SectionCard>
+              )}
+
+              {activeTab === 'comptables' && (
+                <SectionCard title="Comptables">
+                  <Table
+                    columns={[
+                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'prenom', label: 'Prénom', sortable: true },
+                      { key: 'nom', label: 'Nom', sortable: true },
+                      { key: 'email', label: 'Email' },
+                      {
+                        key: 'actions',
+                        label: 'Actions',
+                        render: (row) => (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setDialog({ type: 'edit', resource: 'comptable', data: row })}
+                              size="sm"
+                              variant="secondary"
+                            >
+                              Modifier
+                            </Button>
+                            <Button
+                              onClick={() => handleDelete('comptable', row.id, `Comptable ${row.prenom} ${row.nom}`)}
+                              size="sm"
+                              variant="danger"
+                            >
+                              Supprimer
+                            </Button>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    data={comptables}
+                  />
+                  <Button onClick={() => setDialog({ type: 'create', resource: 'comptable' })} className="mt-4">
+                    + Ajouter Comptable
+                  </Button>
+                </SectionCard>
+              )}
+
+              {activeTab === 'pieces' && (
+                <SectionCard title="Pièces">
+                  <Table
+                    columns={[
+                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'nom', label: 'Nom', sortable: true },
+                      { key: 'reference', label: 'Référence', sortable: true },
+                      { key: 'prix', label: 'Prix', render: (row) => formatCurrency(row.prix) },
+                      {
+                        key: 'actions',
+                        label: 'Actions',
+                        render: (row) => (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setDialog({ type: 'edit', resource: 'piece', data: row })}
+                              size="sm"
+                              variant="secondary"
+                            >
+                              Modifier
+                            </Button>
+                            <Button
+                              onClick={() => handleDelete('piece', row.id, `Pièce ${row.nom}`)}
+                              size="sm"
+                              variant="danger"
+                            >
+                              Supprimer
+                            </Button>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    data={pieces}
+                  />
+                  <Button onClick={() => setDialog({ type: 'create', resource: 'piece' })} className="mt-4">
+                    + Ajouter Pièce
+                  </Button>
+                </SectionCard>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <Footer />
+
+      <div className="fixed bottom-8 right-8 z-40">
+        <CircularMenu items={menuItems} onSelect={handleMenuSelect} />
       </div>
 
       {dialog && (
         <EntityDialog
-          dialog={dialog}
-          clients={clients}
-          vehicules={vehicules}
-          mecaniciens={mecaniciens}
+          isOpen={true}
           onClose={closeDialog}
-          onSaved={refresh}
-          setError={setError}
+          resource={dialog.resource}
+          mode={dialog.type}
+          data={dialog.data}
+          onRefresh={refresh}
         />
       )}
     </div>
@@ -499,255 +500,212 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
 }
 
 function SectionCard({ title, children }) {
+  const { isDark } = useTheme();
   return (
-    <Card className="bg-slate-800/90 border border-white/10 text-gray-100 shadow-xl">
-      <h2 className="text-xl font-bold text-white mb-4 pb-3 border-b border-white/15">{title}</h2>
+    <Card className={`border shadow-xl ${isDark ? 'bg-slate-800/90 border-white/10 text-gray-100' : 'bg-white border-gray-200 text-gray-900'}`}>
+      <h2 className={`text-xl font-bold mb-4 pb-3 border-b ${isDark ? 'text-white border-white/15' : 'text-gray-900 border-gray-300'}`}>{title}</h2>
       {children}
     </Card>
   );
 }
 
-function EntityDialog({ dialog, clients, vehicules, mecaniciens, onClose, onSaved, setError }) {
-  const { resource, id, initial } = dialog;
-  const isEdit = id != null;
-
-  const [nom, setNom] = useState('');
-  const [prenom, setPrenom] = useState('');
-  const [telephone, setTelephone] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const [marque, setMarque] = useState('');
-  const [modele, setModele] = useState('');
-  const [immat, setImmat] = useState('');
-  const [carb, setCarb] = useState('Essence');
-  const [transmission, setTransmission] = useState('Manuelle');
-  const [annee, setAnnee] = useState('2020-01-01');
-  const [clientId, setClientId] = useState('');
-
-  const [prix, setPrix] = useState('');
-  const [quantite, setQuantite] = useState('');
-
-  const [description, setDescription] = useState('');
-  const [statut, setStatut] = useState('pending');
-  const [dateDebut, setDateDebut] = useState('');
-  const [dateFin, setDateFin] = useState('');
-  const [datePrevue, setDatePrevue] = useState('');
-  const [cout, setCout] = useState('');
-  const [vehiculeId, setVehiculeId] = useState('');
-  const [userId, setUserId] = useState('');
-
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const init = initial;
-    setNom(init?.nom || '');
-    setPrenom(init?.prenom || '');
-    setTelephone(init?.telephone || '');
-    setEmail(init?.email || '');
-    setPassword('');
-    setMarque(init?.marque || '');
-    setModele(init?.modele || '');
-    setImmat(init?.immat || '');
-    setCarb(init?.carb || 'Essence');
-    setTransmission(init?.transmission || 'Manuelle');
-    setAnnee(init?.annee ? String(init.annee).slice(0, 10) : '2020-01-01');
-    setClientId(init?.client_id ? String(init.client_id) : clients[0]?.id ? String(clients[0].id) : '');
-    setPrix(init?.prix != null ? String(init.prix) : '');
-    setQuantite(init?.quantite != null ? String(init.quantite) : '');
-    setDescription(init?.description || '');
-    setStatut(init?.statut || 'pending');
-    setDateDebut(init?.date_debut || '');
-    setDateFin(init?.date_fin || '');
-    setDatePrevue(init?.date_prevue_fin || '');
-    setCout(init?.cout != null ? String(init.cout) : '');
-    setVehiculeId(
-      init?.vehicule_id ? String(init.vehicule_id) : vehicules[0]?.id ? String(vehicules[0].id) : ''
-    );
-    setUserId(
-      init?.user_id ? String(init.user_id) : mecaniciens[0]?.id ? String(mecaniciens[0].id) : ''
-    );
-  }, [dialog, initial, clients, vehicules, mecaniciens]);
-
-  const title =
-    resource === 'client'
-      ? isEdit ? 'Modifier le client' : 'Nouveau client'
-      : resource === 'vehicule'
-        ? isEdit ? 'Modifier le véhicule' : 'Nouveau véhicule'
-        : resource === 'mecanicien'
-          ? isEdit ? 'Modifier le mécanicien' : 'Nouveau mécanicien'
-          : resource === 'comptable'
-            ? isEdit ? 'Modifier le comptable' : 'Nouveau comptable'
-          : resource === 'piece'
-            ? isEdit ? 'Modifier la pièce' : 'Nouvelle pièce'
-            : isEdit ? 'Modifier la réparation' : 'Nouvelle réparation';
+function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh }) {
+  const { isDark } = useTheme();
+  const [formData, setFormData] = useState(data || {});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
-    setError(null);
     try {
-      if (resource === 'client') {
-        const payload = { nom, prenom, telephone };
-        if (isEdit) await clientsAPI.update(id, payload);
-        else await clientsAPI.create(payload);
-      } else if (resource === 'vehicule') {
-        const payload = {
-          marque,
-          modele,
-          immat,
-          carb,
-          transmission,
-          annee,
-          client_id: Number(clientId),
-        };
-        if (isEdit) await vehiculesAPI.update(id, payload);
-        else await vehiculesAPI.create(payload);
-      } else if (resource === 'mecanicien') {
-        if (isEdit) {
-          const payload = { nom, prenom, email };
-          if (password.trim()) payload.password = password;
-          await mecaniciensAPI.update(id, payload);
-        } else {
-          await mecaniciensAPI.create({ nom, prenom, email, password });
-        }
-      } else if (resource === 'comptable') {
-        if (isEdit) {
-          const payload = { nom, prenom, email };
-          if (password.trim()) payload.password = password;
-          await comptablesAPI.update(id, payload);
-        } else {
-          await comptablesAPI.create({ nom, prenom, email, password });
-        }
-      } else if (resource === 'piece') {
-        const payload = {
-          nom,
-          prix: Number(prix),
-          quantite: Number(quantite),
-        };
-        if (isEdit) await piecesAPI.update(id, payload);
-        else await piecesAPI.create(payload);
-      } else if (resource === 'reparation') {
-        const payload = {
-          description,
-          statut,
-          date_debut: dateDebut || null,
-          date_fin: dateFin || null,
-          date_prevue_fin: datePrevue || null,
-          cout: Number(cout),
-          vehicule_id: Number(vehiculeId),
-          user_id: Number(userId),
-        };
-        if (isEdit) await reparationsAPI.update(id, payload);
-        else await reparationsAPI.create(payload);
+      if (mode === 'create') {
+        if (resource === 'client') await clientsAPI.create(formData);
+        if (resource === 'vehicule') await vehiculesAPI.create(formData);
+        if (resource === 'reparation') await reparationsAPI.create(formData);
+        if (resource === 'piece') await piecesAPI.create(formData);
+        if (resource === 'mecanicien') await mecaniciensAPI.create(formData);
+        if (resource === 'comptable') await comptablesAPI.create(formData);
+      } else {
+        if (resource === 'client') await clientsAPI.update(formData.id, formData);
+        if (resource === 'vehicule') await vehiculesAPI.update(formData.id, formData);
+        if (resource === 'reparation') await reparationsAPI.update(formData.id, formData);
+        if (resource === 'piece') await piecesAPI.update(formData.id, formData);
+        if (resource === 'mecanicien') await mecaniciensAPI.update(formData.id, formData);
+        if (resource === 'comptable') await comptablesAPI.update(formData.id, formData);
       }
-      await onSaved();
+      onRefresh();
       onClose();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
+  };
+
+  const renderForm = () => {
+    switch (resource) {
+      case 'client':
+        return (
+          <form onSubmit={handleSubmit}>
+            <Input
+              label="Prénom"
+              value={formData.prenom || ''}
+              onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+              required
+            />
+            <Input
+              label="Nom"
+              value={formData.nom || ''}
+              onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+              required
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={formData.email || ''}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+            <Input
+              label="Téléphone"
+              value={formData.telephone || ''}
+              onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+            />
+            <Button type="submit" className="mt-4">
+              {mode === 'create' ? 'Créer Client' : 'Mettre à jour Client'}
+            </Button>
+          </form>
+        );
+      case 'vehicule':
+        return (
+          <form onSubmit={handleSubmit}>
+            <Input
+              label="Marque"
+              value={formData.marque || ''}
+              onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
+              required
+            />
+            <Input
+              label="Modèle"
+              value={formData.modele || ''}
+              onChange={(e) => setFormData({ ...formData, modele: e.target.value })}
+              required
+            />
+            <Input
+              label="Immatriculation"
+              value={formData.immatriculation || ''}
+              onChange={(e) => setFormData({ ...formData, immatriculation: e.target.value })}
+              required
+            />
+            <Button type="submit" className="mt-4">
+              {mode === 'create' ? 'Créer Véhicule' : 'Mettre à jour Véhicule'}
+            </Button>
+          </form>
+        );
+      case 'reparation':
+        return (
+          <form onSubmit={handleSubmit}>
+            <Input
+              label="Description"
+              value={formData.description || ''}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              required
+            />
+            <Select
+              label="Statut"
+              value={formData.statut || ''}
+              onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
+              options={REPARATION_STATUTS}
+            />
+            <Button type="submit" className="mt-4">
+              {mode === 'create' ? 'Créer Réparation' : 'Mettre à jour Réparation'}
+            </Button>
+          </form>
+        );
+      case 'piece':
+        return (
+          <form onSubmit={handleSubmit}>
+            <Input
+              label="Nom"
+              value={formData.nom || ''}
+              onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+              required
+            />
+            <Input
+              label="Référence"
+              value={formData.reference || ''}
+              onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+              required
+            />
+            <Input
+              label="Prix"
+              type="number"
+              value={formData.prix || ''}
+              onChange={(e) => setFormData({ ...formData, prix: parseFloat(e.target.value) })}
+              step="0.01"
+              required
+            />
+            <Button type="submit" className="mt-4">
+              {mode === 'create' ? 'Créer Pièce' : 'Mettre à jour Pièce'}
+            </Button>
+          </form>
+        );
+      case 'mecanicien':
+        return (
+          <form onSubmit={handleSubmit}>
+            <Input
+              label="Prénom"
+              value={formData.prenom || ''}
+              onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+              required
+            />
+            <Input
+              label="Nom"
+              value={formData.nom || ''}
+              onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+              required
+            />
+            <Input
+              label="Spécialité"
+              value={formData.specialite || ''}
+              onChange={(e) => setFormData({ ...formData, specialite: e.target.value })}
+            />
+            <Button type="submit" className="mt-4">
+              {mode === 'create' ? 'Créer Mécanicien' : 'Mettre à jour Mécanicien'}
+            </Button>
+          </form>
+        );
+      case 'comptable':
+        return (
+          <form onSubmit={handleSubmit}>
+            <Input
+              label="Prénom"
+              value={formData.prenom || ''}
+              onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+              required
+            />
+            <Input
+              label="Nom"
+              value={formData.nom || ''}
+              onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+              required
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={formData.email || ''}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+            <Button type="submit" className="mt-4">
+              {mode === 'create' ? 'Créer Comptable' : 'Mettre à jour Comptable'}
+            </Button>
+          </form>
+        );
+      default:
+        return null;
     }
   };
 
   return (
-    <Modal isOpen={true} title={title} onClose={onClose} size="lg">
-      <form onSubmit={handleSubmit} className="space-y-2">
-        {resource === 'client' && (
-          <>
-            <Input label="Nom" value={nom} onChange={(e) => setNom(e.target.value)} required />
-            <Input label="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} required />
-            <Input label="Téléphone" value={telephone} onChange={(e) => setTelephone(e.target.value)} required />
-          </>
-        )}
-
-        {resource === 'vehicule' && (
-          <>
-            <Select
-              label="Client"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              required
-              options={clients.map((c) => ({
-                value: String(c.id),
-                label: `${c.prenom} ${c.nom}`,
-              }))}
-            />
-            <Input label="Marque" value={marque} onChange={(e) => setMarque(e.target.value)} required />
-            <Input label="Modèle" value={modele} onChange={(e) => setModele(e.target.value)} required />
-            <Input label="Immatriculation" value={immat} onChange={(e) => setImmat(e.target.value)} required />
-            <Input label="Carburant" value={carb} onChange={(e) => setCarb(e.target.value)} required />
-            <Input label="Transmission" value={transmission} onChange={(e) => setTransmission(e.target.value)} required />
-            <Input label="Année (date)" type="date" value={annee} onChange={(e) => setAnnee(e.target.value)} required />
-          </>
-        )}
-
-        {(resource === 'mecanicien' || resource === 'comptable') && (
-          <>
-            <Input label="Nom" value={nom} onChange={(e) => setNom(e.target.value)} required />
-            <Input label="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} required />
-            <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Input
-              label={isEdit ? 'Nouveau mot de passe (optionnel)' : 'Mot de passe'}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required={!isEdit}
-            />
-          </>
-        )}
-
-        {resource === 'piece' && (
-          <>
-            <Input label="Désignation" value={nom} onChange={(e) => setNom(e.target.value)} required />
-            <Input label="Prix unitaire" type="number" step="0.01" min="0" value={prix} onChange={(e) => setPrix(e.target.value)} required />
-            <Input label="Quantité en stock" type="number" min="0" value={quantite} onChange={(e) => setQuantite(e.target.value)} required />
-          </>
-        )}
-
-        {resource === 'reparation' && (
-          <>
-            <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)} required />
-            <Select label="Statut" value={statut} onChange={(e) => setStatut(e.target.value)} options={REPARATION_STATUTS} required />
-            <Select
-              label="Véhicule"
-              value={vehiculeId}
-              onChange={(e) => setVehiculeId(e.target.value)}
-              required
-              options={vehicules.map((v) => ({
-                value: String(v.id),
-                label: `${v.immat} — ${v.marque} ${v.modele}`,
-              }))}
-            />
-            <Select
-              label="Mécanicien assigné"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              required
-              options={mecaniciens.map((m) => ({
-                value: String(m.id),
-                label: `${m.prenom} ${m.nom}`,
-              }))}
-            />
-            <Input label="Coût (réparation)" type="number" step="0.01" min="0" value={cout} onChange={(e) => setCout(e.target.value)} required />
-            <Input label="Date début" type="date" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
-            <Input label="Date fin" type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
-            <Input label="Date prévue fin" type="date" value={datePrevue} onChange={(e) => setDatePrevue(e.target.value)} />
-            <p className="text-sm text-gray-500 pt-2">
-              Les pièces utilisées peuvent être liées via l’API (`pieces` sur POST/PUT) ou une future évolution de ce formulaire.
-            </p>
-          </>
-        )}
-
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 mt-4">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button type="submit" variant="primary" disabled={saving}>
-            {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </Button>
-        </div>
-      </form>
+    <Modal isOpen={isOpen} onClose={onClose} title={`${mode === 'create' ? 'Créer' : 'Modifier'} ${resource}`} size="md">
+      {renderForm()}
     </Modal>
   );
 }

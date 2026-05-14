@@ -1,7 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, Zap, Clock, Shield, ArrowRight, Gauge, TrendingUp, Lock } from 'lucide-react';
-import LoginModal from './LoginModal';
+import { Wrench, ArrowRight, Gauge, TrendingUp, Lock, BarChart3 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Footer } from '../common/Footer';
 import './LandingPage.css';
+
+const AnimatedNumber = ({ end, duration = 2 }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const increment = end / (duration * 60);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 1000 / 60);
+    return () => clearInterval(timer);
+  }, [end, duration]);
+
+  return <span>{count}+</span>;
+};
 
 export default function LandingPage({ onGoToLogin }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -61,10 +83,28 @@ export default function LandingPage({ onGoToLogin }) {
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-content animate-fade-in-up">
-          <h1 className="hero-title animate-blur-in">
-            Votre Atelier
-            <span className="gradient-text"> Maîtrisé</span>
-          </h1>
+          <motion.h1
+            className="hero-title animate-blur-in"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              Votre Atelier
+            </motion.span>
+            <motion.span
+              className="gradient-text"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              {' '}Maîtrise
+            </motion.span>
+          </motion.h1>
 
           <p className="hero-subtitle animate-fade-in-up-delay-1">
             La plateforme tout-en-un pour gérer réparations, clients, factures et finances. Augmentez votre productivité, réduisez vos coûts.
@@ -115,19 +155,16 @@ export default function LandingPage({ onGoToLogin }) {
       <section className="stats-section animate-fade-in">
         <div className="stats-container">
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="stat-number">
-              <CountUp end="450+" label="Ateliers satisfaits" />
-            </div>
+            <div className="stat-number"><AnimatedNumber end={450} duration={2.5} /></div>
+            <div className="stat-label">Ateliers satisfaits</div>
           </div>
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <div className="stat-number">
-              <CountUp end="125K+" label="Réparations suivi" />
-            </div>
+            <div className="stat-number"><AnimatedNumber end={125} duration={2.5} />K+</div>
+            <div className="stat-label">Reparations suivies</div>
           </div>
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <div className="stat-number">
-              <CountUp end="99.9%" label="Disponibilité" />
-            </div>
+            <div className="stat-number">99.9%</div>
+            <div className="stat-label">Disponibilite</div>
           </div>
         </div>
       </section>
@@ -139,7 +176,7 @@ export default function LandingPage({ onGoToLogin }) {
           <p className="cta-subtitle">Connectez-vous et gérez votre atelier dès aujourd'hui</p>
           <button
             className="cta-button large"
-            onClick={() => setShowLoginModal(true)}
+            onClick={onGoToLogin}
           >
             <span>Se connecter maintenant</span>
             <ArrowRight className="cta-icon" />
@@ -151,11 +188,7 @@ export default function LandingPage({ onGoToLogin }) {
       <section className="dashboard-link-section">
         <button
           className="dashboard-link-button"
-          onClick={() => {
-            // Navigate to dashboard by setting authentication state
-            const dummyUser = { id: 1, name: 'Accountant', email: 'accountant@workshop.com' };
-            onLoginSuccess(dummyUser);
-          }}
+          onClick={onGoToLogin}
           title="Accéder au tableau de bord"
         >
           <BarChart3 className="dashboard-icon" />
@@ -163,9 +196,7 @@ export default function LandingPage({ onGoToLogin }) {
         </button>
       </section>
 
-      {/* Footer */}
       <Footer />
-
     </div>
   );
 }
