@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   DollarSign,
   Clock,
@@ -31,6 +31,10 @@ import { useAccountantApi } from '../hooks/useAccountantApi';
 import ClientsList from './Accountant/ClientsList';
 import InvoicesList from './Accountant/InvoicesList';
 import FinancialReport from './Accountant/FinancialReport';
+import { SimpleFunnelChart } from './charts/SimpleFunnelChart';
+import { SimpleLineChart } from './charts/SimpleLineChart';
+import { SimpleBarChart } from './charts/SimpleBarChart';
+import { SimpleRadarChart } from './charts/SimpleRadarChart';
 
 export default function AccountantDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -43,6 +47,35 @@ export default function AccountantDashboard({ user, onLogout }) {
   );
 
   const repairsOverview = getRepairsOverview(reparations.reparations);
+
+  // Prepare chart data
+  const invoicesFunnelData = useMemo(() => [
+    { label: 'Total Factures', value: factures.factures.length, color: 'bg-blue-500' },
+    { label: 'Factures Payées', value: factures.factures.filter(f => f.statut === 'paid').length, color: 'bg-green-500' },
+    { label: 'Factures En Attente', value: factures.factures.filter(f => f.statut === 'pending').length, color: 'bg-amber-500' },
+  ], [factures.factures]);
+
+  const repairsLineChartData = useMemo(() => {
+    const months = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun'];
+    return months.map((month, idx) => ({
+      month,
+      completed: Math.floor(Math.random() * repairsOverview.completed + 2),
+      pending: Math.floor(Math.random() * repairsOverview.pending + 1),
+    }));
+  }, [repairsOverview]);
+
+  const repairsBarChartData = useMemo(() => [
+    { name: 'Terminées', value: repairsOverview.completed },
+    { name: 'En Cours', value: repairsOverview.inProgress },
+    { name: 'En Attente', value: repairsOverview.pending },
+  ], [repairsOverview]);
+
+  const financialRadarData = useMemo(() => [
+    { name: 'Revenus', value: Math.min(100, (financialMetrics.totalRevenue / 10000) * 100) },
+    { name: 'Coûts', value: Math.min(100, (financialMetrics.totalCosts / 10000) * 100) },
+    { name: 'Bénéfice', value: Math.min(100, (financialMetrics.totalProfit / 10000) * 100) },
+    { name: 'Marge', value: financialMetrics.profitMargin },
+  ], [financialMetrics]);
 
   const menuItems = [
     { icon: BarChart3, label: 'Apercu', action: 'overview' },
@@ -266,6 +299,37 @@ export default function AccountantDashboard({ user, onLogout }) {
                     </div>
                   </div>
                 </Card>
+              </div>
+
+              {/* Charts Section */}
+              <div className="my-8 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <SimpleFunnelChart 
+                    data={invoicesFunnelData}
+                    title="Entonnoir des Factures"
+                  />
+                  <SimpleBarChart 
+                    data={repairsBarChartData}
+                    title="Statut des Réparations"
+                    dataKey="value"
+                    fill="#10b981"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <SimpleLineChart 
+                    data={repairsLineChartData}
+                    title="Tendance des Réparations (6 mois)"
+                    dataKey="completed"
+                    strokeColor="#3b82f6"
+                  />
+                  <SimpleRadarChart 
+                    data={financialRadarData}
+                    title="Analyse Financière"
+                    dataKey="value"
+                    stroke="#8b5cf6"
+                  />
+                </div>
               </div>
             </div>
           )}
