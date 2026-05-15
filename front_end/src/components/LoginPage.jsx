@@ -149,6 +149,7 @@ export default function LoginPage({ onLoginSuccess, onBackToHome }) {
               <ul className={`${styles.hintList} ${isDark ? styles.hintListDark : ''}`}>
                 <li><strong>Responsable</strong> (un seul compte) : responsable@atelier.com / password123</li>
                 <li><strong>Comptable</strong> : comptable@atelier.com / password123</li>
+                <li><strong>Mécanicien</strong> : mecanicien@atelier.com / password123 (Laravel doit être démarré pour charger les ordres)</li>
               </ul>
             </div>
           </form>

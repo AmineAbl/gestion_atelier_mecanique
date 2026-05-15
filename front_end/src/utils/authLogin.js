@@ -20,6 +20,11 @@ const DEMO_USERS = {
     role: 'responsable',
     name: 'Responsable atelier',
   },
+  'mecanicien@atelier.com': {
+    password: 'password123',
+    role: 'mecanicien',
+    name: 'Paul Garage',
+  },
 };
 
 /**

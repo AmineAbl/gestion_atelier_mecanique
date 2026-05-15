@@ -89,6 +89,9 @@ export const reparationsAPI = {
   // Additional operations
   getByStatus: (status) => apiCall('GET', `/reparations?statut=${status}`),
   getByVehicle: (vehicleId) => apiCall('GET', `/reparations?vehicule_id=${vehicleId}`),
+  /** Filtre optionnel côté API : réparations assignées au mécanicien (user_id). */
+  getByMechanic: (userId) =>
+    apiCall('GET', `/reparations?user_id=${encodeURIComponent(userId)}`),
 };
 
 // ============= VEHICULES (VEHICLES) API =============

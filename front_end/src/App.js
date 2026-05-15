@@ -4,6 +4,7 @@ import LandingPage from './components/Landing/LandingPage';
 import LoginPage from './components/LoginPage';
 import AccountantDashboard from './components/AccountantDashboard';
 import WorkshopManagerDashboard from './components/Manager/WorkshopManagerDashboard';
+import MechanicDashboard from './components/Mechanic/MechanicDashboard';
 import { ThemeProvider } from './context/ThemeContext';
 import { normalizeUser } from './utils/authLogin';
 
@@ -54,10 +55,13 @@ function App() {
     if (role === 'responsable' || role === 'manager' || role === 'admin') {
       return <WorkshopManagerDashboard user={user} onLogout={handleLogout} />;
     }
+    if (role === 'mecanicien') {
+      return <MechanicDashboard user={user} onLogout={handleLogout} />;
+    }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white p-8 gap-6">
         <p className="text-center max-w-md">
-          Aucun tableau de bord pour le rôle « {role} ». Connectez-vous avec un compte responsable ou comptable.
+          Aucun tableau de bord pour le rôle « {role} ». Connectez-vous avec un compte responsable, comptable ou mécanicien.
         </p>
         <button
           type="button"
