@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, ArrowRight, Gauge, TrendingUp, Lock, BarChart3 } from 'lucide-react';
+import { Wrench, ArrowRight, Gauge, TrendingUp, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Footer } from '../common/Footer';
+import { PerspectiveMarquee } from '../common/PerspectiveMarquee';
 import './LandingPage.css';
 
 const AnimatedNumber = ({ end, duration = 2 }) => {
@@ -40,23 +41,23 @@ export default function LandingPage({ onGoToLogin }) {
   const features = [
     {
       icon: Wrench,
-      title: 'Gestion Intelligente',
-      description: 'Orchestrez l\'intégralité de votre flux de réparation. Suivi des pièces, planification des techniciens et gestion des stocks en un tableau de bord intuitif.',
+      title: 'Gestion Intelligente des Réparations',
+      description: 'Orchestrez l\'intégralité de votre flux de réparation automobile. Suivi des pièces détachées, planification des techniciens, gestion des stocks et historique véhicule en un tableau de bord intuitif.',
     },
     {
       icon: Gauge,
-      title: 'Automatisation Complète',
-      description: 'Éliminez les tâches manuelles. Factures auto-générées, rappels de paiement automatisés et planification optimisée pour gagner des heures chaque semaine.',
+      title: 'Automatisation Complète des Processus',
+      description: 'Éliminez les tâches manuelles. Factures auto-générées à partir des réparations, rappels de paiement automatisés, devis numériques et planification optimisée pour gagner des heures chaque semaine.',
     },
     {
       icon: TrendingUp,
-      title: 'Visibilité Totale',
-      description: 'Temps réel, toujours. Suivi des réparations en direct, notifications instantanées, et rapports détaillés pour une gestion sans surprise.',
+      title: 'Visibilité Totale sur vos Opérations',
+      description: 'Temps réel, toujours. Suivi en direct de chaque réparation, notifications instantanées des changements de statut, et rapports financiers détaillés pour une gestion sans surprise.',
     },
     {
       icon: Lock,
-      title: 'Confiance & Conformité',
-      description: 'Données sécurisées avec chiffrement de grade entreprise. Conformité RGPD, sauvegardes automatiques et accès contrôlé par rôle.',
+      title: 'Confiance & Conformité RGPD',
+      description: 'Données client sécurisées avec chiffrement de grade entreprise. Conformité RGPD garantie, sauvegardes automatiques et accès contrôlé par rôle (comptable, mécanicien).',
     },
   ];
 
@@ -107,7 +108,7 @@ export default function LandingPage({ onGoToLogin }) {
           </motion.h1>
 
           <p className="hero-subtitle animate-fade-in-up-delay-1">
-            La plateforme tout-en-un pour gérer réparations, clients, factures et finances. Augmentez votre productivité, réduisez vos coûts.
+            La plateforme tout-en-un pour gérer réparations automobile, clients, factures et finances. Optimisez votre flux d'atelier, augmentez votre rentabilité.
           </p>
 
           <button type="button" className="cta-button animate-fade-in-up-delay-2" onClick={onGoToLogin}>
@@ -151,20 +152,38 @@ export default function LandingPage({ onGoToLogin }) {
         </div>
       </section>
 
+      {/* Trusted By Section - Marquee */}
+      <section className="marquee-showcase-section">
+        <div className="marquee-overlay">
+          <div className="marquee-label animate-fade-in">Trusted by leading automotive brands</div>
+          <PerspectiveMarquee
+            items={['Bosch', 'Michelin', 'Continental', 'Castrol', 'Volkswagen', 'Renault', 'Peugeot', 'Audi', 'BMW', 'Mercedes']}
+            fontSize={42}
+            color="rgba(255, 255, 255, 0.8)"
+            background="transparent"
+            fadeColor="transparent"
+            rotateY={-28}
+            rotateX={8}
+            perspective={1200}
+            className="marquee-custom"
+          />
+        </div>
+      </section>
+
       {/* Stats Section */}
       <section className="stats-section animate-fade-in">
         <div className="stats-container">
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="stat-number"><AnimatedNumber end={450} duration={2.5} /></div>
-            <div className="stat-label">Ateliers satisfaits</div>
+            <div className="stat-number"><AnimatedNumber end={500} duration={2.5} /></div>
+            <div className="stat-label">Ateliers Partenaires</div>
           </div>
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <div className="stat-number"><AnimatedNumber end={125} duration={2.5} />K+</div>
-            <div className="stat-label">Reparations suivies</div>
+            <div className="stat-number"><AnimatedNumber end={850} duration={2.5} />K</div>
+            <div className="stat-label">Réparations Gérées</div>
           </div>
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="stat-number">99.9%</div>
-            <div className="stat-label">Disponibilite</div>
+            <div className="stat-label">Disponibilité Plateforme</div>
           </div>
         </div>
       </section>
@@ -182,18 +201,6 @@ export default function LandingPage({ onGoToLogin }) {
             <ArrowRight className="cta-icon" />
           </button>
         </div>
-      </section>
-
-      {/* Dashboard Link Section */}
-      <section className="dashboard-link-section">
-        <button
-          className="dashboard-link-button"
-          onClick={onGoToLogin}
-          title="Accéder au tableau de bord"
-        >
-          <BarChart3 className="dashboard-icon" />
-          <span>Aller au tableau de bord</span>
-        </button>
       </section>
 
       <Footer />

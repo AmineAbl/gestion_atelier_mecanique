@@ -13,18 +13,25 @@ const CONSTANTS = {
   itemSize: 48,
   containerSize: 250,
   openStagger: 0.02,
-  closeStagger: 0.07
+  closeStagger: 0.07,
+  // Angle span: π/2 radians = 90 degrees (only quarter circle)
+  angleSpan: Math.PI / 2,
+  // Start angle: π radians = 180 degrees (pointing left, going up)
+  startAngle: Math.PI
 };
 
 const pointOnCircle = (i, n, r, cx = 0, cy = 0) => {
-  const theta = (2 * Math.PI * i) / n - Math.PI / 2;
+  // Spread items only across 90 degrees (angleSpan)
+  // Starting from startAngle (180 degrees) going to 270 degrees
+  const angleRange = CONSTANTS.angleSpan;
+  const theta = CONSTANTS.startAngle + (angleRange * i) / Math.max(n - 1, 1);
   const x = cx + r * Math.cos(theta);
   const y = cy + r * Math.sin(theta);
   return { x, y };
 };
 
 const MenuItem = ({ icon, label, onClick, index, totalItems, isOpen, isDark }) => {
-  const { x, y } = pointOnCircle(index, totalItems, CONSTANTS.containerSize / 2);
+  const { x, y } = pointOnCircle(index, totalItems, CONSTANTS.containerSize / 2, 0, 0);
   const [hovering, setHovering] = useState(false);
 
   return (

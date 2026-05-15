@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   DollarSign,
   Clock,
@@ -31,6 +31,10 @@ import { useAccountantApi } from '../hooks/useAccountantApi';
 import ClientsList from './Accountant/ClientsList';
 import InvoicesList from './Accountant/InvoicesList';
 import FinancialReport from './Accountant/FinancialReport';
+import { SimpleFunnelChart } from './charts/SimpleFunnelChart';
+import { SimpleLineChart } from './charts/SimpleLineChart';
+import { SimpleBarChart } from './charts/SimpleBarChart';
+import { SimpleRadarChart } from './charts/SimpleRadarChart';
 
 export default function AccountantDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -43,6 +47,35 @@ export default function AccountantDashboard({ user, onLogout }) {
   );
 
   const repairsOverview = getRepairsOverview(reparations.reparations);
+
+  // Prepare chart data
+  const invoicesFunnelData = useMemo(() => [
+    { label: 'Total Factures', value: factures.factures.length, color: 'bg-blue-500' },
+    { label: 'Factures Payées', value: factures.factures.filter(f => f.statut === 'paid').length, color: 'bg-green-500' },
+    { label: 'Factures En Attente', value: factures.factures.filter(f => f.statut === 'pending').length, color: 'bg-amber-500' },
+  ], [factures.factures]);
+
+  const repairsLineChartData = useMemo(() => {
+    const months = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun'];
+    return months.map((month, idx) => ({
+      month,
+      completed: Math.floor(Math.random() * repairsOverview.completed + 2),
+      pending: Math.floor(Math.random() * repairsOverview.pending + 1),
+    }));
+  }, [repairsOverview]);
+
+  const repairsBarChartData = useMemo(() => [
+    { name: 'Terminées', value: repairsOverview.completed },
+    { name: 'En Cours', value: repairsOverview.inProgress },
+    { name: 'En Attente', value: repairsOverview.pending },
+  ], [repairsOverview]);
+
+  const financialRadarData = useMemo(() => [
+    { name: 'Revenus', value: Math.min(100, (financialMetrics.totalRevenue / 10000) * 100) },
+    { name: 'Coûts', value: Math.min(100, (financialMetrics.totalCosts / 10000) * 100) },
+    { name: 'Bénéfice', value: Math.min(100, (financialMetrics.totalProfit / 10000) * 100) },
+    { name: 'Marge', value: financialMetrics.profitMargin },
+  ], [financialMetrics]);
 
   const menuItems = [
     { icon: BarChart3, label: 'Apercu', action: 'overview' },
@@ -70,33 +103,33 @@ export default function AccountantDashboard({ user, onLogout }) {
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' : 'bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100'} flex flex-col`}>
       <div className={`${isDark ? 'bg-black border-white/20' : 'bg-white border-gray-300'} shadow-md border-b-2`}>
-        <div className="max-w-7xl mx-auto px-6 py-8 w-full">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} tracking-tight`}>
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div className="flex-1">
+              <h1 className={`text-2xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} tracking-tight`}>
                 Interface Comptable
               </h1>
-              <p className={`${isDark ? 'text-gray-300' : 'text-gray-700'} mt-2 text-lg font-medium`}>
+              <p className={`${isDark ? 'text-gray-300' : 'text-gray-700'} mt-2 text-sm md:text-lg font-medium`}>
                 Gestion des factures, clients et rapports financiers (base de donnees)
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full sm:w-auto">
               {user && (
-                <div className="text-right">
-                  <p className={`${isDark ? 'text-white' : 'text-gray-900'} font-semibold flex items-center gap-2`}>
-                    <User className={`w-5 h-5 ${isDark ? 'text-gray-300' : 'text-gray-700'}`} />
-                    {user.name || `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email}
+                <div className="text-right flex-1 sm:flex-none">
+                  <p className={`${isDark ? 'text-white' : 'text-gray-900'} font-semibold flex items-center gap-2 text-sm md:text-base`}>
+                    <User className={`w-4 h-4 md:w-5 md:h-5 ${isDark ? 'text-gray-300' : 'text-gray-700'}`} />
+                    <span className="truncate">{user.name || `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email}</span>
                   </p>
-                  <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>{user.email}</p>
+                  <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-xs md:text-sm truncate`}>{user.email}</p>
                 </div>
               )}
               <ThemeToggle />
               <button
                 type="button"
                 onClick={onLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 border-2 border-red-700 rounded-lg font-semibold transition-all duration-300"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 border-2 border-red-700 rounded-lg font-semibold transition-all duration-300 text-sm md:text-base whitespace-nowrap"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
                 Deconnexion
               </button>
             </div>
@@ -105,7 +138,7 @@ export default function AccountantDashboard({ user, onLogout }) {
       </div>
 
       <div className="flex-1 flex flex-col">
-        <div className="max-w-7xl mx-auto px-6 py-8 w-full flex-1">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 w-full flex-1">
           {error && (
             <div className="mb-6">
               <Alert type="error" message={error} onClose={clearError} />
@@ -122,11 +155,11 @@ export default function AccountantDashboard({ user, onLogout }) {
             </div>
           )}
 
-          <div className={`flex gap-1 mb-8 border-b-2 ${isDark ? 'border-white/10 bg-slate-900' : 'border-gray-300 bg-gray-50'} rounded-t-2xl p-1 shadow-sm`}>
+          <div className={`flex flex-wrap gap-1 mb-8 border-b-2 ${isDark ? 'border-white/10 bg-slate-900' : 'border-gray-300 bg-gray-50'} rounded-t-2xl p-1 shadow-sm`}>
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
-              className={`px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
+              className={`px-3 md:px-6 py-2 md:py-3 font-semibold text-xs md:text-sm transition-all duration-300 rounded-lg whitespace-nowrap ${
                 activeTab === 'overview'
                   ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
                   : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -137,7 +170,7 @@ export default function AccountantDashboard({ user, onLogout }) {
             <button
               type="button"
               onClick={() => setActiveTab('invoices')}
-              className={`px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
+              className={`px-3 md:px-6 py-2 md:py-3 font-semibold text-xs md:text-sm transition-all duration-300 rounded-lg whitespace-nowrap ${
                 activeTab === 'invoices'
                   ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
                   : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -148,7 +181,7 @@ export default function AccountantDashboard({ user, onLogout }) {
             <button
               type="button"
               onClick={() => setActiveTab('clients')}
-              className={`px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
+              className={`px-3 md:px-6 py-2 md:py-3 font-semibold text-xs md:text-sm transition-all duration-300 rounded-lg whitespace-nowrap ${
                 activeTab === 'clients'
                   ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
                   : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -159,7 +192,7 @@ export default function AccountantDashboard({ user, onLogout }) {
             <button
               type="button"
               onClick={() => setActiveTab('reports')}
-              className={`px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
+              className={`px-3 md:px-6 py-2 md:py-3 font-semibold text-xs md:text-sm transition-all duration-300 rounded-lg whitespace-nowrap ${
                 activeTab === 'reports'
                   ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
                   : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -266,6 +299,37 @@ export default function AccountantDashboard({ user, onLogout }) {
                     </div>
                   </div>
                 </Card>
+              </div>
+
+              {/* Charts Section */}
+              <div className="my-8 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <SimpleFunnelChart 
+                    data={invoicesFunnelData}
+                    title="Entonnoir des Factures"
+                  />
+                  <SimpleBarChart 
+                    data={repairsBarChartData}
+                    title="Statut des Réparations"
+                    dataKey="value"
+                    fill="#10b981"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <SimpleLineChart 
+                    data={repairsLineChartData}
+                    title="Tendance des Réparations (6 mois)"
+                    dataKey="completed"
+                    strokeColor="#3b82f6"
+                  />
+                  <SimpleRadarChart 
+                    data={financialRadarData}
+                    title="Analyse Financière"
+                    dataKey="value"
+                    stroke="#8b5cf6"
+                  />
+                </div>
               </div>
             </div>
           )}

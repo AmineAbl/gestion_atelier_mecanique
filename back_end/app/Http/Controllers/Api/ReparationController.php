@@ -22,11 +22,8 @@ class ReparationController extends Controller
             $query->where('vehicule_id', $request->integer('vehicule_id'));
         }
 
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->integer('user_id'));
-        }
-
-        return $query->get();
+        return $query->get()
+            ->map(fn (Reparation $r) => $this->serializeReparation($r));
     }
 
     public function store(Request $request)
@@ -122,5 +119,31 @@ class ReparationController extends Controller
         $reparation->delete();
 
         return response()->json(null, 204);
+    }
+
+    private function serializeReparation(Reparation $r): array
+    {
+        return [
+            'id' => $r->id,
+            'description' => $r->description,
+            'statut' => $r->statut,
+            'date_debut' => $r->date_debut?->format('Y-m-d'),
+            'date_fin' => $r->date_fin?->format('Y-m-d'),
+            'date_prevue_fin' => $r->date_prevue_fin?->format('Y-m-d'),
+            'cout' => (float) $r->cout,
+            'vehicule_id' => $r->vehicule_id,
+            'vehiculeId' => $r->vehicule_id,
+            'user_id' => $r->user_id,
+            'userId' => $r->user_id,
+            'vehicule' => $r->vehicule ? [
+                'id' => $r->vehicule->id,
+                'client_id' => $r->vehicule->client_id,
+                'client' => $r->vehicule->client ? [
+                    'id' => $r->vehicule->client->id,
+                    'nom' => $r->vehicule->client->nom,
+                    'prenom' => $r->vehicule->client->prenom,
+                ] : null,
+            ] : null,
+        ];
     }
 }

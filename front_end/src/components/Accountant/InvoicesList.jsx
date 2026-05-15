@@ -17,6 +17,7 @@ import {
   Alert,
   EmptyState
 } from '../common/UIComponents';
+import { useTheme } from '../../context/ThemeContext';
 import {
   formatCurrency,
   formatDate,
@@ -28,6 +29,7 @@ import {
  * CRUD operations for Factures (Invoices)
  */
 export default function InvoicesList({ factures, clients, reparations }) {
+  const { isDark } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
   const [selectedFacture, setSelectedFacture] = useState(null);
@@ -52,12 +54,22 @@ export default function InvoicesList({ factures, clients, reparations }) {
         .filter((f) => modalMode !== 'edit' || !selectedFacture || f.id !== selectedFacture.id)
         .map((f) => Number(f.reparationId))
     );
-    return reparations.filter((r) => {
+    const options = reparations.filter((r) => {
       if (String(r.clientId) !== String(clientId)) return false;
       const rid = Number(r.id);
       if (taken.has(rid) && rid !== Number(formData.reparationId)) return false;
       return true;
     });
+
+    // Debug logging
+    if (process.env.NODE_ENV === 'development' && clientId) {
+      console.log(
+        `Filtering reparations for client ${clientId}: found ${options.length} of ${reparations.length}`,
+        { sampleRep: reparations[0] }
+      );
+    }
+
+    return options;
   }, [formData.clientId, formData.reparationId, reparations, factures.factures, modalMode, selectedFacture]);
 
   // Filter and search factures
@@ -276,13 +288,22 @@ export default function InvoicesList({ factures, clients, reparations }) {
               placeholder="Rechercher par client ou numéro..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300"
+              className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 ${
+                isDark
+                  ? 'bg-slate-800 border-white/10 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/50'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-500'
+              }`}
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300 bg-white"
+            style={isDark ? { colorScheme: 'dark' } : { colorScheme: 'light' }}
+            className={`px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-300 ${
+              isDark
+                ? 'bg-slate-800 border-white/10 text-white focus:border-blue-500 focus:ring-blue-500/50'
+                : 'bg-white border-gray-300 text-gray-900 focus:ring-2 focus:ring-blue-200 focus:border-blue-500'
+            }`}
           >
             <option value="">Tous les statuts</option>
             <option value="paid">Payée</option>
@@ -347,6 +368,16 @@ export default function InvoicesList({ factures, clients, reparations }) {
                 }))}
                 required
               />
+              {formData.clientId && reparationOptions.length === 0 && reparations.length > 0 && (
+                <div className="text-sm text-amber-600 p-2 bg-amber-50 rounded border border-amber-200">
+                  ℹ️ Aucune réparation disponible pour ce client, ou toutes les réparations sont déjà associées à une facture.
+                </div>
+              )}
+              {formData.clientId && reparationOptions.length === 0 && reparations.length === 0 && (
+                <div className="text-sm text-orange-600 p-2 bg-orange-50 rounded border border-orange-200">
+                  ⚠️ Aucune réparation trouvée. Veuillez d'abord créer une réparation.
+                </div>
+              )}
 
               <Input
                 label="Nombre de pièces"

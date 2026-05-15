@@ -365,7 +365,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                       { key: 'id', label: 'ID', sortable: true },
                       { key: 'prenom', label: 'Prénom', sortable: true },
                       { key: 'nom', label: 'Nom', sortable: true },
-                      { key: 'specialite', label: 'Spécialité' },
+                      { key: 'email', label: 'Email' },
                       {
                         key: 'actions',
                         label: 'Actions',
@@ -493,6 +493,8 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
           mode={dialog.type}
           data={dialog.data}
           onRefresh={refresh}
+          vehicules={vehicules}
+          mecaniciens={mecaniciens}
         />
       )}
     </div>
@@ -509,7 +511,7 @@ function SectionCard({ title, children }) {
   );
 }
 
-function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh }) {
+function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicules, mecaniciens }) {
   const { isDark } = useTheme();
   const [formData, setFormData] = useState(data || {});
 
@@ -608,10 +610,58 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh }) {
               required
             />
             <Select
+              label="Véhicule"
+              value={formData.vehicule_id || ''}
+              onChange={(e) => setFormData({ ...formData, vehicule_id: parseInt(e.target.value) })}
+              options={vehicules.map(v => ({ 
+                value: v.id, 
+                label: `${v.marque} ${v.modele} (${v.immatriculation})` 
+              }))}
+              required
+            />
+            <Select
+              label="Mécanicien"
+              value={formData.user_id || ''}
+              onChange={(e) => setFormData({ ...formData, user_id: parseInt(e.target.value) })}
+              options={mecaniciens.map(m => ({ 
+                value: m.id, 
+                label: `${m.prenom} ${m.nom}` 
+              }))}
+              required
+            />
+            <Input
+              label="Coût"
+              type="number"
+              value={formData.cout || ''}
+              onChange={(e) => setFormData({ ...formData, cout: parseFloat(e.target.value) })}
+              step="0.01"
+              min="0"
+              required
+            />
+            <Input
+              label="Date de début"
+              type="date"
+              value={formData.date_debut || ''}
+              onChange={(e) => setFormData({ ...formData, date_debut: e.target.value })}
+            />
+            <Input
+              label="Date prévue de fin"
+              type="date"
+              value={formData.date_prevue_fin || ''}
+              onChange={(e) => setFormData({ ...formData, date_prevue_fin: e.target.value })}
+            />
+            <Input
+              label="Date de fin"
+              type="date"
+              value={formData.date_fin || ''}
+              onChange={(e) => setFormData({ ...formData, date_fin: e.target.value })}
+            />
+            <Select
               label="Statut"
               value={formData.statut || ''}
               onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
               options={REPARATION_STATUTS}
+              required
             />
             <Button type="submit" className="mt-4">
               {mode === 'create' ? 'Créer Réparation' : 'Mettre à jour Réparation'}
@@ -662,10 +712,22 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh }) {
               required
             />
             <Input
-              label="Spécialité"
-              value={formData.specialite || ''}
-              onChange={(e) => setFormData({ ...formData, specialite: e.target.value })}
+              label="Email"
+              type="email"
+              value={formData.email || ''}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required={mode === 'create'}
             />
+            {mode === 'create' && (
+              <Input
+                label="Mot de passe"
+                type="password"
+                value={formData.password || ''}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                placeholder="Min. 6 caractères"
+              />
+            )}
             <Button type="submit" className="mt-4">
               {mode === 'create' ? 'Créer Mécanicien' : 'Mettre à jour Mécanicien'}
             </Button>
@@ -691,8 +753,18 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh }) {
               type="email"
               value={formData.email || ''}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
+              required={mode === 'create'}
             />
+            {mode === 'create' && (
+              <Input
+                label="Mot de passe"
+                type="password"
+                value={formData.password || ''}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                placeholder="Min. 6 caractères"
+              />
+            )}
             <Button type="submit" className="mt-4">
               {mode === 'create' ? 'Créer Comptable' : 'Mettre à jour Comptable'}
             </Button>
