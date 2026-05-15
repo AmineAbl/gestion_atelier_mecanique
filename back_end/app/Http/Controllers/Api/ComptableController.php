@@ -16,7 +16,7 @@ class ComptableController extends Controller
             ->where('role', 'comptable')
             ->orderBy('nom')
             ->orderBy('prenom')
-            ->get(['id', 'nom', 'prenom', 'email', 'role', 'created_at', 'updated_at']);
+            ->get(['id', 'nom', 'prenom', 'cin', 'email', 'role', 'created_at', 'updated_at']);
     }
 
     public function store(Request $request)
@@ -24,6 +24,7 @@ class ComptableController extends Controller
         $data = $request->validate([
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
+            'cin' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'string', 'min:6'],
         ]);
@@ -31,13 +32,14 @@ class ComptableController extends Controller
         $user = User::query()->create([
             'nom' => $data['nom'],
             'prenom' => $data['prenom'],
+            'cin' => $data['cin'],
             'email' => $data['email'],
             'mdp' => Hash::make($data['password']),
             'role' => 'comptable',
         ]);
 
         return response()->json(
-            $user->only(['id', 'nom', 'prenom', 'email', 'role', 'created_at', 'updated_at']),
+            $user->only(['id', 'nom', 'prenom', 'cin', 'email', 'role', 'created_at', 'updated_at']),
             201
         );
     }
@@ -48,7 +50,7 @@ class ComptableController extends Controller
             abort(404);
         }
 
-        return $comptable->only(['id', 'nom', 'prenom', 'email', 'role', 'created_at', 'updated_at']);
+        return $comptable->only(['id', 'nom', 'prenom', 'cin', 'email', 'role', 'created_at', 'updated_at']);
     }
 
     public function update(Request $request, User $comptable)
@@ -60,6 +62,7 @@ class ComptableController extends Controller
         $data = $request->validate([
             'nom' => ['sometimes', 'string', 'max:255'],
             'prenom' => ['sometimes', 'string', 'max:255'],
+            'cin' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($comptable->id)],
             'password' => ['sometimes', 'string', 'min:6'],
         ]);
@@ -71,7 +74,7 @@ class ComptableController extends Controller
 
         $comptable->update($data);
 
-        return $comptable->fresh()->only(['id', 'nom', 'prenom', 'email', 'role', 'created_at', 'updated_at']);
+        return $comptable->fresh()->only(['id', 'nom', 'prenom', 'cin', 'email', 'role', 'created_at', 'updated_at']);
     }
 
     public function destroy(User $comptable)

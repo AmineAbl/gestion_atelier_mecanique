@@ -19,6 +19,7 @@ class ClientController extends Controller
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
             'telephone' => ['required', 'string', 'max:255'],
+            'cin' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
         ]);
 
@@ -36,6 +37,7 @@ class ClientController extends Controller
             'nom' => ['sometimes', 'string', 'max:255'],
             'prenom' => ['sometimes', 'string', 'max:255'],
             'telephone' => ['sometimes', 'string', 'max:255'],
+            'cin' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255'],
         ]);
 

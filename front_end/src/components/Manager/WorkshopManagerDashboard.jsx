@@ -302,7 +302,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                 <SectionCard title="Clients">
                   <Table
                     columns={[
-                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'cin', label: 'CIN', sortable: true },
                       { key: 'prenom', label: 'Prénom', sortable: true },
                       { key: 'nom', label: 'Nom', sortable: true },
                       { key: 'email', label: 'Email' },
@@ -342,13 +342,17 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                 <SectionCard title="Véhicules">
                   <Table
                     columns={[
-                      { key: 'id', label: 'ID', sortable: true },
-                      { key: 'marque', label: 'Marque', sortable: true },
-                      { key: 'modele', label: 'Modèle', sortable: true },
                       {
                         key: 'immat',
                         label: 'Immatriculation',
                         render: (row) => vehiculePlate(row),
+                      },
+                      { key: 'marque', label: 'Marque', sortable: true },
+                      { key: 'modele', label: 'Modèle', sortable: true },
+                      {
+                        key: 'proprietaire',
+                        label: 'Propriétaire',
+                        render: (row) => row.client ? `${row.client.prenom} ${row.client.nom}` : '-',
                       },
                       {
                         key: 'actions',
@@ -385,7 +389,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                 <SectionCard title="Mécaniciens">
                   <Table
                     columns={[
-                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'cin', label: 'CIN', sortable: true },
                       { key: 'prenom', label: 'Prénom', sortable: true },
                       { key: 'nom', label: 'Nom', sortable: true },
                       { key: 'email', label: 'Email' },
@@ -424,7 +428,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                 <SectionCard title="Comptables">
                   <Table
                     columns={[
-                      { key: 'id', label: 'ID', sortable: true },
+                      { key: 'cin', label: 'CIN', sortable: true },
                       { key: 'prenom', label: 'Prénom', sortable: true },
                       { key: 'nom', label: 'Nom', sortable: true },
                       { key: 'email', label: 'Email' },
@@ -633,6 +637,11 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
               value={formData.telephone || ''}
               onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
             />
+            <Input
+              label="CIN"
+              value={formData.cin || ''}
+              onChange={(e) => setFormData({ ...formData, cin: e.target.value })}
+            />
             <Button type="submit" className="mt-4">
               {mode === 'create' ? 'Créer Client' : 'Mettre à jour Client'}
             </Button>
@@ -747,12 +756,6 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
               value={formData.date_prevue_fin || ''}
               onChange={(e) => setFormData({ ...formData, date_prevue_fin: e.target.value })}
             />
-            <Input
-              label="Date de fin"
-              type="date"
-              value={formData.date_fin || ''}
-              onChange={(e) => setFormData({ ...formData, date_fin: e.target.value })}
-            />
             <Select
               label="Statut"
               value={formData.statut || ''}
@@ -824,6 +827,11 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required={mode === 'create'}
             />
+            <Input
+              label="CIN"
+              value={formData.cin || ''}
+              onChange={(e) => setFormData({ ...formData, cin: e.target.value })}
+            />
             {mode === 'create' && (
               <Input
                 label="Mot de passe"
@@ -860,6 +868,11 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
               value={formData.email || ''}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required={mode === 'create'}
+            />
+            <Input
+              label="CIN"
+              value={formData.cin || ''}
+              onChange={(e) => setFormData({ ...formData, cin: e.target.value })}
             />
             {mode === 'create' && (
               <Input
