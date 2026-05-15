@@ -19,19 +19,20 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
     setIsLoading(true);
 
     try {
-      // Call backend API to authenticate user
       const response = await authAPI.login(email, password);
 
-      // Success - call parent callback with user data
       onLoginSuccess({
-        email: response.user.email,
-        role: response.user.role,
-        name: `${response.user.prenom} ${response.user.nom}`,
-        token: response.token
+        id: response.id,
+        email: response.email,
+        nom: response.nom,
+        prenom: response.prenom,
+        role: response.role,
+        name: response.name || `${response.prenom ?? ''} ${response.nom ?? ''}`.trim(),
       });
     } catch (err) {
       // Show error message from backend or generic message
       setError(err.message || 'Email ou mot de passe incorrect');
+    } finally {
       setIsLoading(false);
     }
   };

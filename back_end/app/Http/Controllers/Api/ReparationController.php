@@ -22,8 +22,12 @@ class ReparationController extends Controller
             $query->where('vehicule_id', $request->integer('vehicule_id'));
         }
 
-        return $query->get()
-            ->map(fn (Reparation $r) => $this->serializeReparation($r));
+if ($request->filled('user_id')) {
+    $query->where('user_id', $request->integer('user_id'));
+}
+
+return $query->get()
+    ->map(fn (Reparation $r) => $this->serializeReparation($r));
     }
 
     public function store(Request $request)

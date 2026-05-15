@@ -43,6 +43,25 @@ const REPARATION_STATUTS = [
   { value: 'cancelled', label: 'Annulée' },
 ];
 
+const CARB_OPTIONS = [
+  { value: 'Essence', label: 'Essence' },
+  { value: 'Diesel', label: 'Diesel' },
+  { value: 'Hybride', label: 'Hybride' },
+  { value: 'Électrique', label: 'Électrique' },
+  { value: 'GPL', label: 'GPL' },
+];
+
+const TRANSMISSION_OPTIONS = [
+  { value: 'Manuelle', label: 'Manuelle' },
+  { value: 'Automatique', label: 'Automatique' },
+  { value: 'Semi-automatique', label: 'Semi-automatique' },
+];
+
+function vehiculePlate(row) {
+  if (!row) return '';
+  return row.immatriculation ?? row.immat ?? '';
+}
+
 function tabClass(isActive, isDark) {
   return `px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
     isActive
@@ -326,7 +345,11 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                       { key: 'id', label: 'ID', sortable: true },
                       { key: 'marque', label: 'Marque', sortable: true },
                       { key: 'modele', label: 'Modèle', sortable: true },
-                      { key: 'immatriculation', label: 'Immatriculation' },
+                      {
+                        key: 'immat',
+                        label: 'Immatriculation',
+                        render: (row) => vehiculePlate(row),
+                      },
                       {
                         key: 'actions',
                         label: 'Actions',
@@ -340,7 +363,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                               Modifier
                             </Button>
                             <Button
-                              onClick={() => handleDelete('vehicule', row.id, `Véhicule ${row.immatriculation}`)}
+                              onClick={() => handleDelete('vehicule', row.id, `Véhicule ${vehiculePlate(row)}`)}
                               size="sm"
                               variant="danger"
                             >
@@ -442,7 +465,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                     columns={[
                       { key: 'id', label: 'ID', sortable: true },
                       { key: 'nom', label: 'Nom', sortable: true },
-                      { key: 'reference', label: 'Référence', sortable: true },
+                      { key: 'quantite', label: 'Stock', sortable: true },
                       { key: 'prix', label: 'Prix', render: (row) => formatCurrency(row.prix) },
                       {
                         key: 'actions',
@@ -495,6 +518,8 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
           onRefresh={refresh}
           vehicules={vehicules}
           mecaniciens={mecaniciens}
+          clients={clients}
+          onSubmitError={(msg) => setError(msg)}
         />
       )}
     </div>
@@ -511,25 +536,63 @@ function SectionCard({ title, children }) {
   );
 }
 
-function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicules, mecaniciens }) {
+function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicules, mecaniciens, clients, onSubmitError }) {
   const { isDark } = useTheme();
-  const [formData, setFormData] = useState(data || {});
+  const [formData, setFormData] = useState({});
+
+  useEffect(() => {
+    if (resource === 'vehicule') {
+      if (data) {
+        setFormData({
+          ...data,
+          immatriculation: data.immatriculation ?? data.immat ?? '',
+          client_id: data.client_id ?? data.client?.id ?? '',
+          annee: data.annee ? String(data.annee).slice(0, 4) : '',
+        });
+      } else {
+        setFormData({});
+      }
+      return;
+    }
+    setFormData(data || {});
+  }, [resource, mode, data, isOpen]);
+
+  const buildVehiculeApiPayload = () => {
+    const year = parseInt(formData.annee, 10);
+    const annee =
+      Number.isFinite(year) && year >= 1900 && year <= 2100 ? `${year}-01-01` : '';
+    return {
+      marque: formData.marque,
+      modele: formData.modele,
+      immat: (formData.immatriculation || formData.immat || '').trim(),
+      carb: formData.carb,
+      transmission: formData.transmission,
+      annee,
+      client_id: parseInt(formData.client_id, 10),
+    };
+  };
+
+  const buildPieceApiPayload = () => ({
+    nom: (formData.nom || '').trim(),
+    prix: Number(formData.prix),
+    quantite: parseInt(formData.quantite, 10),
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (mode === 'create') {
         if (resource === 'client') await clientsAPI.create(formData);
-        if (resource === 'vehicule') await vehiculesAPI.create(formData);
+        if (resource === 'vehicule') await vehiculesAPI.create(buildVehiculeApiPayload());
         if (resource === 'reparation') await reparationsAPI.create(formData);
-        if (resource === 'piece') await piecesAPI.create(formData);
+        if (resource === 'piece') await piecesAPI.create(buildPieceApiPayload());
         if (resource === 'mecanicien') await mecaniciensAPI.create(formData);
         if (resource === 'comptable') await comptablesAPI.create(formData);
       } else {
         if (resource === 'client') await clientsAPI.update(formData.id, formData);
-        if (resource === 'vehicule') await vehiculesAPI.update(formData.id, formData);
+        if (resource === 'vehicule') await vehiculesAPI.update(formData.id, buildVehiculeApiPayload());
         if (resource === 'reparation') await reparationsAPI.update(formData.id, formData);
-        if (resource === 'piece') await piecesAPI.update(formData.id, formData);
+        if (resource === 'piece') await piecesAPI.update(formData.id, buildPieceApiPayload());
         if (resource === 'mecanicien') await mecaniciensAPI.update(formData.id, formData);
         if (resource === 'comptable') await comptablesAPI.update(formData.id, formData);
       }
@@ -537,6 +600,7 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
       onClose();
     } catch (error) {
       console.error('Error submitting form:', error);
+      onSubmitError?.(error?.message || 'Enregistrement impossible.');
     }
   };
 
@@ -577,6 +641,16 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
       case 'vehicule':
         return (
           <form onSubmit={handleSubmit}>
+            <Select
+              label="Client"
+              value={formData.client_id || ''}
+              onChange={(e) => setFormData({ ...formData, client_id: e.target.value ? parseInt(e.target.value, 10) : '' })}
+              options={clients.map((c) => ({
+                value: c.id,
+                label: `${c.prenom} ${c.nom}`.trim() || `Client #${c.id}`,
+              }))}
+              required
+            />
             <Input
               label="Marque"
               value={formData.marque || ''}
@@ -593,6 +667,29 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
               label="Immatriculation"
               value={formData.immatriculation || ''}
               onChange={(e) => setFormData({ ...formData, immatriculation: e.target.value })}
+              required
+            />
+            <Select
+              label="Carburant"
+              value={formData.carb || ''}
+              onChange={(e) => setFormData({ ...formData, carb: e.target.value })}
+              options={CARB_OPTIONS}
+              required
+            />
+            <Select
+              label="Transmission"
+              value={formData.transmission || ''}
+              onChange={(e) => setFormData({ ...formData, transmission: e.target.value })}
+              options={TRANSMISSION_OPTIONS}
+              required
+            />
+            <Input
+              label="Année"
+              type="number"
+              min="1900"
+              max="2100"
+              value={formData.annee || ''}
+              onChange={(e) => setFormData({ ...formData, annee: e.target.value })}
               required
             />
             <Button type="submit" className="mt-4">
@@ -613,9 +710,9 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
               label="Véhicule"
               value={formData.vehicule_id || ''}
               onChange={(e) => setFormData({ ...formData, vehicule_id: parseInt(e.target.value) })}
-              options={vehicules.map(v => ({ 
-                value: v.id, 
-                label: `${v.marque} ${v.modele} (${v.immatriculation})` 
+              options={vehicules.map((v) => ({
+                value: v.id,
+                label: `${v.marque} ${v.modele} (${vehiculePlate(v)})`,
               }))}
               required
             />
@@ -678,17 +775,26 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
               required
             />
             <Input
-              label="Référence"
-              value={formData.reference || ''}
-              onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+              label="Prix unitaire"
+              type="number"
+              value={formData.prix ?? ''}
+              onChange={(e) => setFormData({ ...formData, prix: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+              step="0.01"
+              min="0"
               required
             />
             <Input
-              label="Prix"
+              label="Quantité en stock"
               type="number"
-              value={formData.prix || ''}
-              onChange={(e) => setFormData({ ...formData, prix: parseFloat(e.target.value) })}
-              step="0.01"
+              min="0"
+              step="1"
+              value={formData.quantite ?? ''}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  quantite: e.target.value === '' ? '' : parseInt(e.target.value, 10),
+                })
+              }
               required
             />
             <Button type="submit" className="mt-4">

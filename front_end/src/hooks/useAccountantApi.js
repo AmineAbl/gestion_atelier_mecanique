@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   clientsAPI,
-  comptablesAPI,
   facturesAPI,
   reparationsAPI,
   vehiculesAPI,
 } from '../services/api';
+import { resolveComptableUserId } from '../utils/comptableIdentity';
 
 function normalizeVehicule(v) {
   return {
@@ -27,14 +27,6 @@ function normalizeReparation(r) {
     vehiculeId: r.vehicule_id,
     userId: r.user_id,
   };
-}
-
-async function resolveComptableUserId(user) {
-  if (user?.id) return user.id;
-  if (!user?.email) return null;
-  const list = await comptablesAPI.getAll();
-  const match = list.find((c) => c.email === user.email);
-  return match?.id ?? null;
 }
 
 /**

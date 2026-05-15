@@ -1,4 +1,5 @@
 import { authAPI } from '../services/api';
+import { resolveComptableUserId } from './comptableIdentity';
 
 /**
  * Comptes de secours si l’API Laravel n’est pas joignable.
@@ -33,7 +34,16 @@ const DEMO_USERS = {
 export async function loginWithApiOrDemo(email, password) {
   try {
     const userData = await authAPI.login(email, password);
-    return normalizeUser(userData);
+    const normalized = normalizeUser(userData);
+    try {
+      const id = await resolveComptableUserId(normalized);
+      if (id != null) {
+        return { ...normalized, id };
+      }
+    } catch {
+      /* GET /comptables indisponible : garder la session telle quelle (id API si présent) */
+    }
+    return normalized;
   } catch {
     /* API indisponible ou identifiants invalides */
   }
@@ -43,11 +53,24 @@ export async function loginWithApiOrDemo(email, password) {
     throw new Error('Email ou mot de passe incorrect');
   }
 
-  return normalizeUser({
+  const base = normalizeUser({
     email,
     role: demo.role,
     name: demo.name,
   });
+
+  if (base.role === 'comptable') {
+    try {
+      const id = await resolveComptableUserId(base);
+      if (id != null) {
+        return { ...base, id };
+      }
+    } catch {
+      /* API indisponible : pas d’id (création de facture échouera côté hook) */
+    }
+  }
+
+  return base;
 }
 
 export function normalizeUser(userData) {
