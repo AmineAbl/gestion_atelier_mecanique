@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Alert,
   Button,
@@ -30,6 +30,13 @@ function nextLineKey() {
     : `ln-${Date.now()}-${Math.random()}`;
 }
 
+function sumLines(lines) {
+  return (lines || []).reduce(
+    (sum, ln) => sum + Number(ln.quantite || 0) * Number(ln.prix_utilise || 0),
+    0
+  );
+}
+
 function repairToLines(repair) {
   const list = repair?.pieces;
   if (!Array.isArray(list) || list.length === 0) return [];
@@ -41,6 +48,15 @@ function repairToLines(repair) {
   }));
 }
 
+function usedPieceIdsFromLines(lines) {
+  return new Set(
+    (lines || [])
+      .map((ln) => ln.piece_id)
+      .filter(Boolean)
+      .map(String)
+  );
+}
+
 export default function MechanicReparationModal({
   isOpen,
   onClose,
@@ -50,16 +66,64 @@ export default function MechanicReparationModal({
 }) {
   const { isDark } = useTheme();
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [saveError, setSaveError] = useState(null);
   const [repair, setRepair] = useState(null);
   const [description, setDescription] = useState('');
   const [statut, setStatut] = useState('pending');
-  const [cout, setCout] = useState('');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
   const [datePrevueFin, setDatePrevueFin] = useState('');
   const [lines, setLines] = useState([]);
+  const [piecePickerOpen, setPiecePickerOpen] = useState(false);
+  const [pickerSelectedId, setPickerSelectedId] = useState('');
+
+  const catalog = useMemo(
+    () => (Array.isArray(piecesCatalog) ? piecesCatalog : []),
+    [piecesCatalog]
+  );
+
+  const coutAuto = useMemo(() => sumLines(lines), [lines]);
+
+  const usedPieceIds = useMemo(() => usedPieceIdsFromLines(lines), [lines]);
+
+  const pickerCatalog = useMemo(
+    () => catalog.filter((p) => !usedPieceIds.has(String(p.id))),
+    [catalog, usedPieceIds]
+  );
+
+  const getPieceOptionsForLine = useCallback(
+    (lineKey) =>
+      catalog
+        .filter((p) => {
+          const id = String(p.id);
+          if (usedPieceIds.has(id)) {
+            const line = lines.find((l) => l.key === lineKey);
+            return line?.piece_id === id;
+          }
+          return true;
+        })
+        .map((p) => ({
+          value: String(p.id),
+          label: p.nom,
+        })),
+    [catalog, lines, usedPieceIds]
+  );
+
+  const resetForm = useCallback(() => {
+    setRepair(null);
+    setDescription('');
+    setStatut('pending');
+    setDateDebut('');
+    setDateFin('');
+    setDatePrevueFin('');
+    setLines([]);
+    setPiecePickerOpen(false);
+    setPickerSelectedId('');
+    setLoadError(null);
+    setSaveError(null);
+  }, []);
 
   const loadRepair = useCallback(async () => {
     if (!reparationId) return;
@@ -67,14 +131,15 @@ export default function MechanicReparationModal({
     setLoading(true);
     try {
       const data = await reparationsAPI.getById(reparationId);
+      const loadedLines = repairToLines(data);
+
       setRepair(data);
       setDescription(data.description || '');
       setStatut(data.statut || 'pending');
-      setCout(data.cout != null ? String(data.cout) : '');
       setDateDebut(dateInputValue(data.date_debut));
       setDateFin(dateInputValue(data.date_fin));
       setDatePrevueFin(dateInputValue(data.date_prevue_fin));
-      setLines(repairToLines(data));
+      setLines(loadedLines);
     } catch (e) {
       setLoadError(e.message || 'Impossible de charger la réparation');
       setRepair(null);
@@ -85,29 +150,44 @@ export default function MechanicReparationModal({
 
   useEffect(() => {
     if (isOpen && reparationId) {
-      setSaveError(null);
       loadRepair();
+    } else if (!isOpen) {
+      resetForm();
     }
-  }, [isOpen, reparationId, loadRepair]);
+  }, [isOpen, reparationId, loadRepair, resetForm]);
 
-  const pieceOptions = (Array.isArray(piecesCatalog) ? piecesCatalog : []).map((p) => ({
-    value: String(p.id),
-    label: `${p.nom} (${formatCurrency(p.prix)})`,
-  }));
+  useEffect(() => {
+    if (piecePickerOpen && pickerCatalog.length === 0) {
+      setPiecePickerOpen(false);
+      setPickerSelectedId('');
+    }
+  }, [piecePickerOpen, pickerCatalog.length]);
 
-  const addLine = () => {
-    const first = pieceOptions[0]?.value || '';
-    const cat = Array.isArray(piecesCatalog) ? piecesCatalog : [];
-    const def = first ? cat.find((p) => String(p.id) === first) : null;
+  const openPiecePicker = () => {
+    if (pickerCatalog.length === 0) return;
+    setPickerSelectedId('');
+    setPiecePickerOpen(true);
+  };
+
+  const closePiecePicker = () => {
+    setPiecePickerOpen(false);
+    setPickerSelectedId('');
+  };
+
+  const confirmPiecePicker = () => {
+    if (!pickerSelectedId || usedPieceIds.has(String(pickerSelectedId))) return;
+    const pc = catalog.find((p) => String(p.id) === String(pickerSelectedId));
+    if (!pc) return;
     setLines((prev) => [
       ...prev,
       {
         key: nextLineKey(),
-        piece_id: first,
+        piece_id: String(pickerSelectedId),
         quantite: 1,
-        prix_utilise: def != null ? Number(def.prix) : 0,
+        prix_utilise: Number(pc.prix ?? 0),
       },
     ]);
+    closePiecePicker();
   };
 
   const removeLine = (key) => {
@@ -115,13 +195,18 @@ export default function MechanicReparationModal({
   };
 
   const updateLine = (key, patch) => {
+    if (patch.piece_id != null) {
+      const duplicate = lines.some(
+        (l) => l.key !== key && String(l.piece_id) === String(patch.piece_id)
+      );
+      if (duplicate) return;
+    }
     setLines((prev) =>
       prev.map((l) => {
         if (l.key !== key) return l;
         const next = { ...l, ...patch };
         if (patch.piece_id != null && patch.prix_utilise === undefined) {
-          const cat = Array.isArray(piecesCatalog) ? piecesCatalog : [];
-          const pc = cat.find((p) => String(p.id) === String(patch.piece_id));
+          const pc = catalog.find((p) => String(p.id) === String(patch.piece_id));
           if (pc) next.prix_utilise = Number(pc.prix);
         }
         return next;
@@ -133,11 +218,7 @@ export default function MechanicReparationModal({
     e.preventDefault();
     setSaveError(null);
     if (!repair?.id) return;
-    const coutNum = Number(cout);
-    if (Number.isNaN(coutNum) || coutNum < 0) {
-      setSaveError('Le coût doit être un nombre positif ou zéro.');
-      return;
-    }
+
     for (const ln of lines) {
       if (!ln.piece_id) {
         setSaveError('Chaque ligne doit avoir une pièce sélectionnée.');
@@ -153,7 +234,9 @@ export default function MechanicReparationModal({
         return;
       }
     }
+
     try {
+      setSaving(true);
       const piecesPayload = lines.map((ln) => ({
         piece_id: Number(ln.piece_id),
         quantite: Number(ln.quantite),
@@ -162,7 +245,7 @@ export default function MechanicReparationModal({
       await reparationsAPI.update(repair.id, {
         description,
         statut,
-        cout: coutNum,
+        cout: coutAuto,
         date_debut: dateDebut || null,
         date_fin: dateFin || null,
         date_prevue_fin: datePrevueFin || null,
@@ -172,6 +255,8 @@ export default function MechanicReparationModal({
       onClose();
     } catch (err) {
       setSaveError(err.message || 'Enregistrement impossible');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -200,7 +285,7 @@ export default function MechanicReparationModal({
             <p className="font-semibold mb-2">Véhicule & client</p>
             <p>
               {veh
-                ? `${veh.marque || ''} ${veh.modele || ''} · ${veh.immatriculation || veh.immat || '—'}`
+                ? `${[veh.marque, veh.modele].filter(Boolean).join('-') || '—'} · ${veh.immatriculation || veh.immat || '—'}`
                 : '—'}
             </p>
             <p className="mt-1">
@@ -240,28 +325,32 @@ export default function MechanicReparationModal({
             required
           />
 
-          <Input
-            label="Coût (main d'œuvre / atelier)"
-            type="number"
-            min="0"
-            step="0.01"
-            value={cout}
-            onChange={(e) => setCout(e.target.value)}
-            required
-          />
+          <div
+            className={`rounded-xl border p-4 ${
+              isDark ? 'border-white/10 bg-slate-800/40' : 'border-gray-200 bg-gray-50'
+            }`}
+          >
+            <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              Coût
+            </label>
+            <div
+              className={`px-4 py-3 rounded-xl border-2 text-lg font-bold tabular-nums ${
+                isDark
+                  ? 'bg-slate-900/60 border-white/10 text-amber-400'
+                  : 'bg-white border-gray-200 text-gray-900'
+              }`}
+              aria-live="polite"
+            >
+              {formatCurrency(coutAuto)}
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Input
               label="Date début"
               type="date"
               value={dateDebut}
               onChange={(e) => setDateDebut(e.target.value)}
-            />
-            <Input
-              label="Fin prévue"
-              type="date"
-              value={datePrevueFin}
-              onChange={(e) => setDatePrevueFin(e.target.value)}
             />
             <Input
               label="Date fin"
@@ -276,15 +365,76 @@ export default function MechanicReparationModal({
           >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h3 className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Pièces utilisées</h3>
-              <Button type="button" variant="secondary" size="sm" onClick={addLine} disabled={!pieceOptions.length}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={openPiecePicker}
+                disabled={!pickerCatalog.length}
+              >
                 + Ligne
               </Button>
             </div>
-            {!pieceOptions.length && (
+
+            {piecePickerOpen && (
+              <div
+                className={`mb-4 p-3 rounded-lg border ${
+                  isDark ? 'border-amber-500/30 bg-slate-900/80' : 'border-amber-200 bg-amber-50'
+                }`}
+              >
+                <p className={`text-xs font-semibold mb-2 uppercase ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
+                  Pièces disponibles — sélectionnez une ligne puis OK
+                </p>
+                <ul className="space-y-1 max-h-52 overflow-y-auto mb-3">
+                  {pickerCatalog.map((p) => {
+                    const selected = String(pickerSelectedId) === String(p.id);
+                    const outOfStock = (p.quantite ?? 0) < 1;
+                    return (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        onClick={() => !outOfStock && setPickerSelectedId(String(p.id))}
+                        disabled={outOfStock}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors border-2 ${
+                          outOfStock
+                            ? isDark
+                              ? 'opacity-40 cursor-not-allowed border-transparent text-gray-500'
+                              : 'opacity-40 cursor-not-allowed border-transparent text-gray-400'
+                            : selected
+                              ? isDark
+                                ? 'border-amber-400 bg-amber-500/20 text-white'
+                                : 'border-amber-500 bg-white text-gray-900 shadow-sm'
+                              : isDark
+                                ? 'border-transparent hover:bg-white/10 text-gray-200'
+                                : 'border-transparent hover:bg-white text-gray-800'
+                        }`}
+                      >
+                        <span className="font-medium">{p.nom}</span>
+                        <span className={`ml-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {formatCurrency(p.prix)} · stock {p.quantite ?? 0}
+                        </span>
+                      </button>
+                    </li>
+                    );
+                  })}
+                </ul>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" onClick={confirmPiecePicker} disabled={!pickerSelectedId}>
+                    OK
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={closePiecePicker}>
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!catalog.length && (
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 Aucune pièce en catalogue. Le responsable peut ajouter des références pièces.
               </p>
             )}
+
             <div className="space-y-3">
               {lines.map((ln) => (
                 <div
@@ -293,40 +443,55 @@ export default function MechanicReparationModal({
                     isDark ? 'border-white/10 bg-slate-900/50' : 'border-gray-200 bg-gray-50'
                   }`}
                 >
-                  <div className="flex-1 min-w-[180px]">
+                  <div className="flex-1 min-w-[200px]">
                     <Select
                       label="Pièce"
                       value={ln.piece_id}
                       onChange={(e) => updateLine(ln.key, { piece_id: e.target.value })}
-                      options={pieceOptions}
-                      required
-                    />
-                  </div>
-                  <div className="w-24">
-                    <Input
-                      label="Qté"
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={String(ln.quantite)}
-                      onChange={(e) =>
-                        updateLine(ln.key, { quantite: parseInt(e.target.value, 10) || 1 })
-                      }
+                      options={getPieceOptionsForLine(ln.key)}
                       required
                     />
                   </div>
                   <div className="w-32">
-                    <Input
-                      label="Prix utilisé"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={String(ln.prix_utilise)}
-                      onChange={(e) =>
-                        updateLine(ln.key, { prix_utilise: parseFloat(e.target.value) || 0 })
-                      }
-                      required
-                    />
+                    {(() => {
+                      const piece = catalog.find(
+                        (p) => String(p.id) === String(ln.piece_id)
+                      );
+
+                      const stock = Number(piece?.quantite ?? 0);
+                      const qte = Number(ln.quantite ?? 0);
+                      const left = stock - qte;
+
+                      return (
+                        <Input
+                          label={`Qté (stock: ${left})`}
+                          type="number"
+                          min="1"
+                          max={stock}
+                          step="1"
+                          value={String(ln.quantite)}
+                          onChange={(e) =>
+                            updateLine(ln.key, {
+                              quantite: parseInt(e.target.value, 10) || 1,
+                            })
+                          }
+                          required
+                        />
+                      );
+                    })()}
+                  </div>
+                  <div className="w-24">
+                  <Input
+                  label="Prix utilisé"
+                  type="number"
+                  readOnly
+                  tabIndex={-1}
+                  value={
+                    ln.prix_utilise === '' || ln.prix_utilise == null
+                      ? ''
+                      : String(ln.prix_utilise)
+                  }
+                />
                   </div>
                   <Button type="button" variant="danger" size="sm" onClick={() => removeLine(ln.key)}>
                     Retirer
@@ -337,8 +502,10 @@ export default function MechanicReparationModal({
           </div>
 
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button type="submit">Enregistrer</Button>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Enregistrement…' : 'Enregistrer'}
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               Annuler
             </Button>
           </div>

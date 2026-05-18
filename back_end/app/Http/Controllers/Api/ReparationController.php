@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Piece;
 use App\Models\Reparation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ReparationController extends Controller
 {
@@ -55,21 +58,33 @@ return $query->get()
             return response()->json(['message' => 'L’utilisateur assigné doit être un mécanicien'], 422);
         }
 
-        $reparation = Reparation::query()->create($data);
+        $reparation = DB::transaction(function () use ($data, $pieces) {
+            $reparation = Reparation::query()->create($data);
 
-        foreach ($pieces as $row) {
-            $reparation->pieces()->attach($row['piece_id'], [
-                'quantite' => $row['quantite'],
-                'prix_utilise' => $row['prix_utilise'],
-            ]);
-        }
+            if ($pieces !== []) {
+                $newQuantities = $this->piecesQuantitiesFromRows($pieces);
+                $this->adjustPieceStock([], $newQuantities);
 
-        return response()->json($reparation->load(['vehicule.client', 'mecanicien', 'pieces']), 201);
+                foreach ($pieces as $row) {
+                    $reparation->pieces()->attach($row['piece_id'], [
+                        'quantite' => $row['quantite'],
+                        'prix_utilise' => $row['prix_utilise'],
+                    ]);
+                }
+            }
+
+            return $reparation;
+        });
+
+        return response()->json(
+            $this->serializeReparation($reparation->load(['vehicule.client', 'mecanicien', 'pieces'])),
+            201
+        );
     }
 
     public function show(Reparation $reparation)
     {
-        return $reparation->load(['vehicule.client', 'mecanicien', 'pieces']);
+        return $this->serializeReparation($reparation->load(['vehicule.client', 'mecanicien', 'pieces']));
     }
 
     public function update(Request $request, Reparation $reparation)
@@ -102,25 +117,45 @@ return $query->get()
             unset($data['pieces']);
         }
 
-        $reparation->update($data);
+        DB::transaction(function () use ($reparation, $data, $pieces) {
+            $reparation->update($data);
 
-        if (is_array($pieces)) {
-            $sync = [];
-            foreach ($pieces as $row) {
-                $sync[$row['piece_id']] = [
-                    'quantite' => $row['quantite'],
-                    'prix_utilise' => $row['prix_utilise'],
-                ];
+            if (is_array($pieces)) {
+                $oldQuantities = $reparation->pieces()
+                    ->get()
+                    ->mapWithKeys(fn (Piece $p) => [(int) $p->id => (int) $p->pivot->quantite])
+                    ->all();
+
+                $newQuantities = $this->piecesQuantitiesFromRows($pieces);
+                $this->adjustPieceStock($oldQuantities, $newQuantities);
+
+                $sync = [];
+                foreach ($pieces as $row) {
+                    $sync[$row['piece_id']] = [
+                        'quantite' => $row['quantite'],
+                        'prix_utilise' => $row['prix_utilise'],
+                    ];
+                }
+                $reparation->pieces()->sync($sync);
             }
-            $reparation->pieces()->sync($sync);
-        }
+        });
 
-        return $reparation->fresh()->load(['vehicule.client', 'mecanicien', 'pieces']);
+        return $this->serializeReparation(
+            $reparation->fresh()->load(['vehicule.client', 'mecanicien', 'pieces'])
+        );
     }
 
     public function destroy(Reparation $reparation)
     {
-        $reparation->delete();
+        DB::transaction(function () use ($reparation) {
+            $oldQuantities = $reparation->pieces()
+                ->get()
+                ->mapWithKeys(fn (Piece $p) => [(int) $p->id => (int) $p->pivot->quantite])
+                ->all();
+
+            $this->adjustPieceStock($oldQuantities, []);
+            $reparation->delete();
+        });
 
         return response()->json(null, 204);
     }
@@ -135,19 +170,99 @@ return $query->get()
             'date_fin' => $r->date_fin?->format('Y-m-d'),
             'date_prevue_fin' => $r->date_prevue_fin?->format('Y-m-d'),
             'cout' => (float) $r->cout,
+            'created_at' => $r->created_at?->toIso8601String(),
             'vehicule_id' => $r->vehicule_id,
             'vehiculeId' => $r->vehicule_id,
             'user_id' => $r->user_id,
             'userId' => $r->user_id,
+            'mecanicien' => $r->mecanicien ? [
+                'id' => $r->mecanicien->id,
+                'nom' => $r->mecanicien->nom,
+                'prenom' => $r->mecanicien->prenom,
+                'email' => $r->mecanicien->email,
+                'cin' => $r->mecanicien->cin ?? null,
+            ] : null,
             'vehicule' => $r->vehicule ? [
                 'id' => $r->vehicule->id,
+                'marque' => $r->vehicule->marque,
+                'modele' => $r->vehicule->modele,
+                'immat' => $r->vehicule->immat,
+                'immatriculation' => $r->vehicule->immat,
                 'client_id' => $r->vehicule->client_id,
                 'client' => $r->vehicule->client ? [
                     'id' => $r->vehicule->client->id,
                     'nom' => $r->vehicule->client->nom,
                     'prenom' => $r->vehicule->client->prenom,
+                    'telephone' => $r->vehicule->client->telephone ?? null,
+                    'cin' => $r->vehicule->client->cin ?? null,
                 ] : null,
             ] : null,
+            'pieces' => $r->relationLoaded('pieces')
+                ? $r->pieces->map(fn (Piece $p) => [
+                    'id' => $p->id,
+                    'nom' => $p->nom,
+                    'prix' => (float) $p->prix,
+                    'quantite' => (int) $p->quantite,
+                    'pivot' => [
+                        'quantite' => (int) $p->pivot->quantite,
+                        'prix_utilise' => (float) $p->pivot->prix_utilise,
+                    ],
+                ])->values()->all()
+                : [],
         ];
+    }
+
+    /**
+     * @param  array<int, array{piece_id: int, quantite: int}>  $rows
+     * @return array<int, int>
+     */
+    private function piecesQuantitiesFromRows(array $rows): array
+    {
+        $quantities = [];
+        foreach ($rows as $row) {
+            $pieceId = (int) $row['piece_id'];
+            $quantities[$pieceId] = ($quantities[$pieceId] ?? 0) + (int) $row['quantite'];
+        }
+
+        return $quantities;
+    }
+
+    /**
+     * Ajuste le stock atelier : delta positif = plus de pièces consommées sur la réparation.
+     *
+     * @param  array<int, int>  $oldQuantities
+     * @param  array<int, int>  $newQuantities
+     */
+    private function adjustPieceStock(array $oldQuantities, array $newQuantities): void
+    {
+        $pieceIds = array_unique(array_merge(array_keys($oldQuantities), array_keys($newQuantities)));
+
+        foreach ($pieceIds as $pieceId) {
+            $old = (int) ($oldQuantities[$pieceId] ?? 0);
+            $new = (int) ($newQuantities[$pieceId] ?? 0);
+            $delta = $new - $old;
+
+            if ($delta === 0) {
+                continue;
+            }
+
+            $piece = Piece::query()->lockForUpdate()->find($pieceId);
+            if (! $piece) {
+                throw ValidationException::withMessages([
+                    'pieces' => ["La pièce #{$pieceId} est introuvable."],
+                ]);
+            }
+
+            if ($delta > 0 && (int) $piece->quantite < $delta) {
+                throw ValidationException::withMessages([
+                    'pieces' => [
+                        "Stock insuffisant pour « {$piece->nom} » : {$piece->quantite} disponible(s), {$delta} demandée(s).",
+                    ],
+                ]);
+            }
+
+            $piece->quantite = (int) $piece->quantite - $delta;
+            $piece->save();
+        }
     }
 }

@@ -34,6 +34,21 @@ const REPARATION_STATUTS = [
   { value: 'cancelled', label: 'Annulée' },
 ];
 
+function vehiculeImmat(row) {
+  const v = row?.vehicule;
+  if (!v) return '—';
+  return (v.immat || v.immatriculation || '').trim() || '—';
+}
+
+function vehiculeMarqueModele(row) {
+  const v = row?.vehicule;
+  if (!v) return '—';
+  const marque = (v.marque || '').trim();
+  const modele = (v.modele || '').trim();
+  if (marque && modele) return `${marque}-${modele}`;
+  return marque || modele || '—';
+}
+
 function tabClass(isActive, isDark) {
   return `px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
     isActive
@@ -294,14 +309,16 @@ export default function MechanicDashboard({ user, onLogout }) {
               ) : (
                 <Table
                   columns={[
-                    { key: 'id', label: 'ID', sortable: true },
+                    {
+                      key: 'immat',
+                      label: 'Immatriculation',
+                      sortable: true,
+                      render: (row) => vehiculeImmat(row),
+                    },
                     {
                       key: 'vehicule',
                       label: 'Véhicule',
-                      render: (row) =>
-                        row.vehicule
-                          ? `${row.vehicule.marque || ''} ${row.vehicule.modele || ''} (${row.vehicule.immatriculation || row.vehicule.immat || '—'})`
-                          : '—',
+                      render: (row) => vehiculeMarqueModele(row),
                     },
                     {
                       key: 'client',
@@ -363,7 +380,7 @@ export default function MechanicDashboard({ user, onLogout }) {
                 Catalogue pièces (consultation)
               </h2>
               <p className={`text-sm mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Référence pour vos fiches réparation. Les stocks sont gérés par l’atelier.
+                Référence pour vos fiches réparation. Le stock diminue automatiquement lorsque vous enregistrez des pièces sur une réparation.
               </p>
               <div className="max-w-md mb-4">
                 <Input
@@ -412,8 +429,8 @@ export default function MechanicDashboard({ user, onLogout }) {
                   <dd>{user?.email || '—'}</dd>
                 </div>
                 <div>
-                  <dt className="font-semibold text-xs uppercase opacity-80">Identifiant</dt>
-                  <dd>{user?.id != null ? user.id : '— (connexion API recommandée)'}</dd>
+                  <dt className="font-semibold text-xs uppercase opacity-80">CIN</dt>
+                  <dd>{user?.cin || '—'}</dd>
                 </div>
                 <div>
                   <dt className="font-semibold text-xs uppercase opacity-80">Rôle</dt>

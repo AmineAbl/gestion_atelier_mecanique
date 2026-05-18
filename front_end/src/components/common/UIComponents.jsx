@@ -96,13 +96,14 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
 /**
  * Button Component - Professional button with multiple variants
  */
-export const Button = ({ 
-  children, 
-  onClick, 
-  variant = 'primary', 
+export const Button = ({
+  children,
+  onClick,
+  variant = 'primary',
   size = 'md',
   className = '',
-  disabled = false 
+  disabled = false,
+  type = 'button',
 }) => {
   const { isDark } = useTheme();
   
@@ -126,6 +127,7 @@ export const Button = ({
 
   return (
     <button
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={`rounded-xl font-medium transition-all duration-300 ${variants[variant]} ${sizes[size]} ${className} ${

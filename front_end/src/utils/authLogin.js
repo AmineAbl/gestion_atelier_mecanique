@@ -1,5 +1,6 @@
 import { authAPI } from '../services/api';
 import { resolveComptableUserId } from './comptableIdentity';
+import { resolveMechanicProfile } from './mechanicIdentity';
 
 /**
  * Comptes de secours si l’API Laravel n’est pas joignable.
@@ -34,14 +35,19 @@ const DEMO_USERS = {
 export async function loginWithApiOrDemo(email, password) {
   try {
     const userData = await authAPI.login(email, password);
-    const normalized = normalizeUser(userData);
-    try {
-      const id = await resolveComptableUserId(normalized);
-      if (id != null) {
-        return { ...normalized, id };
+    let normalized = normalizeUser(userData);
+    if (normalized.role === 'comptable') {
+      try {
+        const id = await resolveComptableUserId(normalized);
+        if (id != null) {
+          normalized = { ...normalized, id };
+        }
+      } catch {
+        /* GET /comptables indisponible */
       }
-    } catch {
-      /* GET /comptables indisponible : garder la session telle quelle (id API si présent) */
+    }
+    if (normalized.role === 'mecanicien') {
+      normalized = await resolveMechanicProfile(normalized);
     }
     return normalized;
   } catch {
@@ -68,6 +74,10 @@ export async function loginWithApiOrDemo(email, password) {
     } catch {
       /* API indisponible : pas d’id (création de facture échouera côté hook) */
     }
+  }
+
+  if (base.role === 'mecanicien') {
+    return resolveMechanicProfile(base);
   }
 
   return base;

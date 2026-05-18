@@ -65,6 +65,7 @@ class DatabaseSeeder extends Seeder
             [
                 'nom' => 'Garage',
                 'prenom' => 'Paul',
+                'cin' => 'AB123456',
                 'mdp' => Hash::make('password123'),
                 'role' => 'mecanicien',
             ]
@@ -75,6 +76,7 @@ class DatabaseSeeder extends Seeder
             [
                 'nom' => 'Dupont',
                 'prenom' => 'Marc',
+                'cin' => 'CD789012',
                 'mdp' => Hash::make('password123'),
                 'role' => 'mecanicien',
             ]
