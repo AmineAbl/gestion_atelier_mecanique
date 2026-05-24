@@ -17,7 +17,7 @@ import {
   Alert,
   Spinner
 } from './common/UIComponents';
-import { Footer } from './common/Footer';
+import { StaffFooter } from './common/StaffFooter';
 import { ThemeToggle } from './common/ThemeToggle';
 import { CircularMenu } from './common/CircularMenu';
 import { useTheme } from '../context/ThemeContext';
@@ -339,6 +339,8 @@ export default function AccountantDashboard({ user, onLogout }) {
               factures={factures}
               clients={clients.clients}
               reparations={reparations.reparations}
+              vehicules={vehicules.vehicules}
+              users={[]}
             />
           )}
 
@@ -361,7 +363,7 @@ export default function AccountantDashboard({ user, onLogout }) {
         </div>
       </div>
 
-      <Footer />
+      <StaffFooter role="accountant" onNavigate={setActiveTab} />
 
       <div className="fixed bottom-8 right-8 z-40">
         <CircularMenu items={menuItems} onSelect={handleMenuSelect} />

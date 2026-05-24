@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   Calculator,
   Car,
+  FileText,
   LayoutDashboard,
   LogOut,
   Package,
@@ -22,19 +23,20 @@ import {
   StatusBadge,
   Table,
 } from '../common/UIComponents';
-import { Footer } from '../common/Footer';
+import { StaffFooter } from '../common/StaffFooter';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { CircularMenu } from '../common/CircularMenu';
 import { useTheme } from '../../context/ThemeContext';
 import {
   clientsAPI,
   comptablesAPI,
+  facturesAPI,
   mecaniciensAPI,
   piecesAPI,
   reparationsAPI,
   vehiculesAPI,
 } from '../../services/api';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency, formatDate, generateInvoiceNumber } from '../../utils/helpers';
 
 const REPARATION_STATUTS = [
   { value: 'pending', label: 'En attente' },
@@ -78,6 +80,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
   const [clients, setClients] = useState([]);
   const [vehicules, setVehicules] = useState([]);
   const [reparations, setReparations] = useState([]);
+  const [factures, setFactures] = useState([]);
   const [pieces, setPieces] = useState([]);
   const [mecaniciens, setMecaniciens] = useState([]);
   const [comptables, setComptables] = useState([]);
@@ -87,10 +90,11 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
     setError(null);
     setLoading(true);
     try {
-      const [c, v, r, p, m, co] = await Promise.all([
+      const [c, v, r, f, p, m, co] = await Promise.all([
         clientsAPI.getAll(),
         vehiculesAPI.getAll(),
         reparationsAPI.getAll(),
+        facturesAPI.getAll(),
         piecesAPI.getAll(),
         mecaniciensAPI.getAll(),
         comptablesAPI.getAll(),
@@ -98,6 +102,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
       setClients(Array.isArray(c) ? c : []);
       setVehicules(Array.isArray(v) ? v : []);
       setReparations(Array.isArray(r) ? r : []);
+      setFactures(Array.isArray(f) ? f : f?.data || []);
       setPieces(Array.isArray(p) ? p : []);
       setMecaniciens(Array.isArray(m) ? m : []);
       setComptables(Array.isArray(co) ? co : []);
@@ -135,6 +140,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Apercu', action: 'overview' },
     { icon: Wrench, label: 'Reparations', action: 'reparations' },
+    { icon: FileText, label: 'Factures', action: 'factures' },
     { icon: Users, label: 'Clients', action: 'clients' },
     { icon: Car, label: 'Vehicules', action: 'vehicules' },
     { icon: User, label: 'Mecaniciens', action: 'mecaniciens' },
@@ -147,6 +153,14 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
       setActiveTab(item.action);
     }
   };
+
+  const getClientName = (clientId) => {
+    if (!clientId) return 'Inconnu';
+    const match = clients.find((c) => Number(c.id) === Number(clientId));
+    return match ? `${match.prenom} ${match.nom}` : 'Inconnu';
+  };
+
+  const facturePdfLink = (row) => row.facturePdfUrl || row.facture_pdf_url || null;
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' : 'bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100'} flex flex-col`}>
@@ -201,6 +215,11 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
             <button type="button" className={tabClass(activeTab === 'reparations', isDark)} onClick={() => setActiveTab('reparations')}>
               <span className="inline-flex items-center gap-2">
                 <Wrench className="w-4 h-4" /> Réparations
+              </span>
+            </button>
+            <button type="button" className={tabClass(activeTab === 'factures', isDark)} onClick={() => setActiveTab('factures')}>
+              <span className="inline-flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Factures
               </span>
             </button>
             <button type="button" className={tabClass(activeTab === 'clients', isDark)} onClick={() => setActiveTab('clients')}>
@@ -295,6 +314,64 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                   <Button onClick={() => setDialog({ type: 'create', resource: 'reparation' })} className="mt-4">
                     + Ajouter Réparation
                   </Button>
+                </SectionCard>
+              )}
+
+              {activeTab === 'factures' && (
+                <SectionCard title="Factures">
+                  <Table
+                    columns={[
+                      {
+                        key: 'id',
+                        label: 'N° Facture',
+                        render: (row) =>
+                          generateInvoiceNumber(
+                            row.id,
+                            row.date_validation || row.dateValidation || new Date().toISOString().split('T')[0]
+                          ),
+                      },
+                      {
+                        key: 'client',
+                        label: 'Client',
+                        render: (row) => getClientName(row.clientId || row.client_id),
+                      },
+                      {
+                        key: 'statut',
+                        label: 'Statut',
+                        render: (row) => <StatusBadge status={row.statut} />,
+                      },
+                      {
+                        key: 'prix_total',
+                        label: 'Total TTC',
+                        render: (row) => formatCurrency(row.prix_total),
+                      },
+                      {
+                        key: 'date_validation',
+                        label: 'Date',
+                        render: (row) => formatDate(row.date_validation || row.dateValidation),
+                      },
+                      {
+                        key: 'pdf',
+                        label: 'PDF',
+                        render: (row) => {
+                          const link = facturePdfLink(row);
+                          return link ? (
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 font-semibold"
+                            >
+                              Voir
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">Aucun</span>
+                          );
+                        },
+                      },
+                    ]}
+                    data={factures}
+                  />
                 </SectionCard>
               )}
 
@@ -506,7 +583,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
         </div>
       </div>
 
-      <Footer />
+      <StaffFooter role="manager" onNavigate={setActiveTab} />
 
       <div className="fixed bottom-8 right-8 z-40">
         <CircularMenu items={menuItems} onSelect={handleMenuSelect} />

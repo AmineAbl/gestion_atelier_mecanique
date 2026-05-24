@@ -27,6 +27,7 @@ import {
   formatCurrency,
   calculateFinancialMetrics
 } from '../../utils/helpers';
+import { generateFinancialReportPDF } from '../../utils/pdfGenerator';
 import { useTheme } from '../../context/ThemeContext';
 
 /**
@@ -157,7 +158,20 @@ export default function FinancialReport({ factures, reparations, clients }) {
   const repairStatusData = getRepairStatusData();
 
   const handleExportPDF = () => {
-    alert('Export PDF - Fonctionnalité à intégrer avec une API backend');
+    try {
+      generateFinancialReportPDF(
+        metrics,
+        getMonthlyData(),
+        invoiceStatusData,
+        topClients,
+        factures,
+        clients,
+        reparations
+      );
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error);
+      alert('Erreur lors de la génération du PDF. Veuillez réessayer.');
+    }
   };
 
   return (

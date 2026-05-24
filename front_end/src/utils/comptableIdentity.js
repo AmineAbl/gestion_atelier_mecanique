@@ -3,7 +3,7 @@
  */
 export const getComptableIdentity = () => {
     try {
-      const user = localStorage.getItem('user');
+      const user = localStorage.getItem('user') || localStorage.getItem('currentUser');
       return user ? JSON.parse(user) : null;
     } catch {
       return null;
@@ -22,6 +22,7 @@ export const getComptableIdentity = () => {
   
   export default getComptableIdentity;
 
-  export const resolveComptableUserId = () => {
+  export const resolveComptableUserId = (user) => {
+    if (user && user.id) return user.id;
     return getComptableId();
   };

@@ -4,7 +4,8 @@ import {
   Edit2,
   Trash2,
   Eye,
-  Download
+  Download,
+  Upload
 } from 'lucide-react';
 import {
   Card,
@@ -23,12 +24,13 @@ import {
   formatDate,
   generateInvoiceNumber
 } from '../../utils/helpers';
+import { generateInvoicePDF } from '../../utils/pdfGenerator';
 
 /**
  * Invoices Management Component
  * CRUD operations for Factures (Invoices)
  */
-export default function InvoicesList({ factures, clients, reparations }) {
+export default function InvoicesList({ factures, clients, reparations, vehicules = [], users = [] }) {
   const { isDark } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
@@ -36,8 +38,11 @@ export default function InvoicesList({ factures, clients, reparations }) {
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [alertMessage, setAlertMessage] = useState(null);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     clientId: '',
+    vehiculeId: '',
     reparationId: '',
     total_piece: 0,
     cout: 0,
@@ -46,7 +51,15 @@ export default function InvoicesList({ factures, clients, reparations }) {
     date_validation: ''
   });
 
+  // Get vehicles for the selected client
+  const availableVehicules = useMemo(() => {
+    if (!formData.clientId) return [];
+    return (vehicules || []).filter((v) => Number(v.clientId) === Number(formData.clientId));
+  }, [formData.clientId, vehicules]);
+
+  // Get reparations for the selected vehicle
   const reparationOptions = useMemo(() => {
+    if (!formData.vehiculeId) return [];
     const clientId = formData.clientId;
     if (!clientId) return [];
     const taken = new Set(
@@ -54,23 +67,15 @@ export default function InvoicesList({ factures, clients, reparations }) {
         .filter((f) => modalMode !== 'edit' || !selectedFacture || f.id !== selectedFacture.id)
         .map((f) => Number(f.reparationId))
     );
-    const options = reparations.filter((r) => {
-      if (String(r.clientId) !== String(clientId)) return false;
+    const options = (reparations || []).filter((r) => {
+      if (Number(r.vehicule_id || r.vehiculeId) !== Number(formData.vehiculeId)) return false;
       const rid = Number(r.id);
       if (taken.has(rid) && rid !== Number(formData.reparationId)) return false;
       return true;
     });
 
-    // Debug logging
-    if (process.env.NODE_ENV === 'development' && clientId) {
-      console.log(
-        `Filtering reparations for client ${clientId}: found ${options.length} of ${reparations.length}`,
-        { sampleRep: reparations[0] }
-      );
-    }
-
     return options;
-  }, [formData.clientId, formData.reparationId, reparations, factures.factures, modalMode, selectedFacture]);
+  }, [formData.vehiculeId, formData.clientId, formData.reparationId, reparations, factures.factures, modalMode, selectedFacture]);
 
   // Filter and search factures
   const filteredFactures = useMemo(() => {
@@ -95,12 +100,14 @@ export default function InvoicesList({ factures, clients, reparations }) {
   }, [factures.factures, filterStatus, searchTerm, clients]);
 
   const getClientName = (clientId) => {
-    const client = clients.find(c => c.id === clientId);
+    if (!clientId) return 'Inconnu';
+    const client = clients.find(c => Number(c.id) === Number(clientId));
     return client ? `${client.prenom} ${client.nom}` : 'Inconnu';
   };
 
   const getReparationDescription = (reparationId) => {
-    const reparation = reparations.find(r => r.id === reparationId);
+    if (!reparationId) return 'N/A';
+    const reparation = reparations.find(r => Number(r.id) === Number(reparationId));
     return reparation ? reparation.description : 'N/A';
   };
 
@@ -108,9 +115,11 @@ export default function InvoicesList({ factures, clients, reparations }) {
     setModalMode(mode);
     if (facture) {
       setSelectedFacture(facture);
+      const reparation = reparations.find(r => Number(r.id) === Number(facture.reparationId));
       setFormData({
         ...facture,
         clientId: facture.clientId != null ? String(facture.clientId) : '',
+        vehiculeId: reparation?.vehicule_id ? String(reparation.vehicule_id) : '',
         reparationId: facture.reparationId != null ? String(facture.reparationId) : '',
         total_piece: facture.total_piece,
         date_validation: facture.date_validation || '',
@@ -118,6 +127,7 @@ export default function InvoicesList({ factures, clients, reparations }) {
     } else {
       setFormData({
         clientId: '',
+        vehiculeId: '',
         reparationId: '',
         total_piece: 0,
         cout: 0,
@@ -126,6 +136,7 @@ export default function InvoicesList({ factures, clients, reparations }) {
         date_validation: ''
       });
     }
+    setUploadFile(null);
     setShowModal(true);
   };
 
@@ -138,6 +149,9 @@ export default function InvoicesList({ factures, clients, reparations }) {
     const updatedForm = { ...formData, [field]: value };
 
     if (field === 'clientId') {
+      updatedForm.vehiculeId = '';
+      updatedForm.reparationId = '';
+    } else if (field === 'vehiculeId') {
       updatedForm.reparationId = '';
     }
 
@@ -181,6 +195,45 @@ export default function InvoicesList({ factures, clients, reparations }) {
       setAlertMessage({ type: 'error', message: e.message || 'Suppression impossible' });
     }
     setTimeout(() => setAlertMessage(null), 3000);
+  };
+
+  const handleDownloadInvoicePDF = async (facture) => {
+    try {
+      const client = clients.find(c => Number(c.id) === Number(facture.clientId));
+      const reparation = reparations.find(r => Number(r.id) === Number(facture.reparationId));
+      const vehicule = vehicules.find(v => Number(v.id) === Number(reparation?.vehicule_id || reparation?.vehiculeId));
+      const mechanic = users?.find(u => Number(u.id) === Number(reparation?.user_id || reparation?.userId));
+      
+      await generateInvoicePDF(facture, client, reparation, vehicule, mechanic, {
+        name: 'Atelier Mécanique',
+        address: 'Adresse de votre atelier',
+        phone: 'Téléphone'
+      });
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error);
+      setAlertMessage({ type: 'error', message: 'Erreur lors de la génération du PDF' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    }
+  };
+
+  const handleUploadInvoicePDF = async () => {
+    if (!selectedFacture || !uploadFile) {
+      setAlertMessage({ type: 'error', message: 'Veuillez choisir un fichier PDF' });
+      setTimeout(() => setAlertMessage(null), 3000);
+      return;
+    }
+
+    try {
+      setUploading(true);
+      await factures.uploadFacturePdf(selectedFacture.id, uploadFile);
+      setAlertMessage({ type: 'success', message: 'Facture PDF mise à jour avec succès' });
+      setUploadFile(null);
+    } catch (e) {
+      setAlertMessage({ type: 'error', message: e.message || 'Erreur lors de l’envoi du PDF' });
+    } finally {
+      setUploading(false);
+      setTimeout(() => setAlertMessage(null), 3000);
+    }
   };
 
   const handleExportCSV = () => {
@@ -240,6 +293,24 @@ export default function InvoicesList({ factures, clients, reparations }) {
       render: (row) => formatDate(row.date_validation)
     },
     {
+      key: 'facturePdfUrl',
+      label: 'PDF',
+      render: (row) => (
+        row.facturePdfUrl ? (
+          <a
+            href={row.facturePdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 font-semibold"
+          >
+            Voir
+          </a>
+        ) : (
+          <span className="text-gray-400">Aucun</span>
+        )
+      )
+    },
+    {
       key: 'actions',
       label: 'Actions',
       render: (row) => (
@@ -250,6 +321,20 @@ export default function InvoicesList({ factures, clients, reparations }) {
             title="Voir"
           >
             <Eye className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDownloadInvoicePDF(row)}
+            className="text-purple-600 hover:text-purple-800"
+            title="Télécharger PDF"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleOpenModal('view', row)}
+            className="text-slate-600 hover:text-slate-800"
+            title="Ajouter un PDF"
+          >
+            <Upload className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleOpenModal('edit', row)}
@@ -359,6 +444,23 @@ export default function InvoicesList({ factures, clients, reparations }) {
               />
 
               <Select
+                label="Véhicule"
+                value={formData.vehiculeId}
+                onChange={(e) => handleFormChange('vehiculeId', e.target.value)}
+                options={availableVehicules.map(v => ({
+                  value: String(v.id),
+                  label: `${v.marque || ''} ${v.modele || ''} - ${v.immat || v.immatriculation || ''}`
+                }))}
+                required
+                disabled={!formData.clientId}
+              />
+              {formData.clientId && availableVehicules.length === 0 && (
+                <div className="text-sm text-orange-600 p-2 bg-orange-50 rounded border border-orange-200">
+                  ⚠️ Aucun véhicule trouvé pour ce client.
+                </div>
+              )}
+
+              <Select
                 label="Réparation"
                 value={formData.reparationId}
                 onChange={(e) => handleFormChange('reparationId', e.target.value)}
@@ -367,6 +469,7 @@ export default function InvoicesList({ factures, clients, reparations }) {
                   label: r.description
                 }))}
                 required
+                disabled={!formData.vehiculeId}
               />
               {formData.clientId && reparationOptions.length === 0 && reparations.length > 0 && (
                 <div className="text-sm text-amber-600 p-2 bg-amber-50 rounded border border-amber-200">
@@ -472,9 +575,44 @@ export default function InvoicesList({ factures, clients, reparations }) {
                 </div>
               </div>
 
+              <div className="rounded-lg border border-dashed border-gray-300 p-4 bg-gray-50">
+                <p className="text-sm font-semibold text-gray-700 mb-2">Facture PDF</p>
+                {selectedFacture.facturePdfUrl ? (
+                  <a
+                    href={selectedFacture.facturePdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 font-semibold"
+                  >
+                    Télécharger la facture existante
+                  </a>
+                ) : (
+                  <p className="text-sm text-gray-500">Aucun PDF associé</p>
+                )}
+                <div className="mt-3 flex flex-col md:flex-row gap-3 items-start md:items-center">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                    className="text-sm"
+                  />
+                  <Button
+                    onClick={handleUploadInvoicePDF}
+                    variant="primary"
+                    disabled={!uploadFile || uploading}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? 'Envoi...' : 'Uploader le PDF'}
+                  </Button>
+                </div>
+              </div>
+
               <div className="flex gap-3 justify-end pt-4">
                 <Button onClick={() => handleOpenModal('edit', selectedFacture)} variant="primary">
                   <Edit2 className="w-4 h-4 mr-2" /> Modifier
+                </Button>
+                <Button onClick={() => handleDownloadInvoicePDF(selectedFacture)} variant="secondary">
+                  <Download className="w-4 h-4 mr-2" /> Télécharger PDF
                 </Button>
                 <Button onClick={handleCloseModal} variant="secondary">
                   Fermer

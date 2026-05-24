@@ -22,8 +22,8 @@ class FactureController extends Controller
      */
     public function index()
     {
-        // Fetch all factures with relationships
-        $factures = Facture::with(['users', 'reparations'])->get();
+        // Fetch all factures with relationships (including nested vehicule for client ID)
+        $factures = Facture::with(['user', 'reparation.vehicule'])->get();
 
         return response()->json([
             'data' => $factures,
@@ -51,20 +51,18 @@ class FactureController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate incoming data
         $validated = $request->validate([
             'total_piece' => 'required|integer|min:0',
             'cout' => 'required|numeric|min:0',
             'prix_total' => 'required|numeric|min:0',
-            'date_validation' => 'required|date',
-            'statut' => 'required|in:pending,completed,paid,unpaid',
-            'reparationId' => 'required|integer',
+            'date_validation' => 'nullable|date',
+            'statut' => 'required|in:pending,completed,paid,unpaid,cancelled',
+            'reparation_id' => 'required|integer',
+            'user_id' => 'sometimes|integer',
         ]);
 
-        // Add user_id from authenticated user
-        $validated['user_id'] = auth()->id() ?? 1; // Fallback for testing if no user is authenticated
-        $validated['reparation_id'] = $validated['reparationId'];
-        unset($validated['reparationId']);
+        // Use provided user_id or authenticated user or fallback
+        $validated['user_id'] = $request->user_id ?? auth()->id() ?? 1;
 
         // Create new facture
         $facture = Facture::create($validated);
@@ -89,7 +87,7 @@ class FactureController extends Controller
     public function show($id)
     {
         // Find facture with relationships
-        $facture = Facture::with(['users', 'reparations'])->find($id);
+        $facture = Facture::with(['user', 'reparation.vehicule'])->find($id);
 
         if (!$facture) {
             return response()->json([
@@ -130,20 +128,17 @@ class FactureController extends Controller
             ], 404);
         }
 
-        // Validate incoming data
         $validated = $request->validate([
             'total_piece' => 'sometimes|integer|min:0',
             'cout' => 'sometimes|numeric|min:0',
             'prix_total' => 'sometimes|numeric|min:0',
-            'date_validation' => 'sometimes|date',
-            'statut' => 'sometimes|in:pending,completed,paid,unpaid',
-            'reparationId' => 'sometimes|integer',
+            'date_validation' => 'sometimes|date|nullable',
+            'statut' => 'sometimes|in:pending,completed,paid,unpaid,cancelled',
+            'reparation_id' => 'sometimes|integer',
+            'user_id' => 'sometimes|integer',
         ]);
 
-        if (isset($validated['reparationId'])) {
-            $validated['reparation_id'] = $validated['reparationId'];
-            unset($validated['reparationId']);
-        }
+
 
         // Update facture
         $facture->update($validated);

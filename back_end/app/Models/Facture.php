@@ -16,6 +16,7 @@ class Facture extends Model
        'prix_total',
        'date_validation',
        'statut',
+         'facture_pdf_path',
        'reparation_id',
        'user_id',
        'client_id'

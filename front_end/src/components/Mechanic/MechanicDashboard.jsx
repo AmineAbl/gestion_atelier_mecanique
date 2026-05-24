@@ -18,7 +18,7 @@ import {
   StatusBadge,
   Table,
 } from '../common/UIComponents';
-import { Footer } from '../common/Footer';
+import { StaffFooter } from '../common/StaffFooter';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { CircularMenu } from '../common/CircularMenu';
 import { useTheme } from '../../context/ThemeContext';
@@ -442,7 +442,7 @@ export default function MechanicDashboard({ user, onLogout }) {
         </div>
       </div>
 
-      <Footer />
+      <StaffFooter role="mechanic" onNavigate={setActiveTab} />
 
       <div className="fixed bottom-8 right-8 z-40">
         <CircularMenu items={menuItems} onSelect={handleMenuSelect} />

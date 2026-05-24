@@ -1,0 +1,224 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+.privacy-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1a1f3a 50%, #0f172a 100%);
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: relative;
+}
+
+.privacy-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.privacy-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.privacy-brand-icon {
+  width: 22px;
+  height: 22px;
+  color: #ffffff;
+}
+
+.privacy-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.privacy-back:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.privacy-back-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.privacy-hero {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 24px 20px;
+  text-align: center;
+}
+
+.privacy-hero h1 {
+  font-size: 40px;
+  margin-bottom: 16px;
+}
+
+.privacy-hero p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.privacy-body {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.privacy-timeline {
+  position: sticky;
+  top: 140px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-left: 18px;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0));
+}
+
+.timeline-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.timeline-item:hover {
+  color: #ffffff;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+}
+
+.timeline-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.timeline-label {
+  font-weight: 600;
+}
+
+.privacy-content {
+  display: grid;
+  gap: 20px;
+}
+
+.privacy-section-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 18px;
+  padding: 22px 26px;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.35);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.section-icon svg {
+  width: 18px;
+  height: 18px;
+  color: #93c5fd;
+}
+
+.privacy-section-card h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.privacy-section-card p {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .privacy-body {
+    grid-template-columns: 1fr;
+  }
+
+  .privacy-timeline {
+    position: relative;
+    top: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-left: 0;
+    justify-content: center;
+  }
+
+  .timeline-line {
+    display: none;
+  }
+
+  .timeline-item {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+}
+
+@media (max-width: 600px) {
+  .privacy-hero h1 {
+    font-size: 30px;
+  }
+
+  .privacy-section-card {
+    padding: 18px 20px;
+  }
+}
