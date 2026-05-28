@@ -68,7 +68,7 @@ function tabClass(isActive, isDark) {
   return `px-6 py-3 font-semibold text-sm transition-all duration-300 rounded-lg ${
     isActive
       ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
-      : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+      : isDark ? 'text-gray-400 hover:text-white hover:ring-1 hover:ring-white/20' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
   }`;
 }
 
@@ -659,20 +659,31 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
     quantite: parseInt(formData.quantite, 10),
   });
 
+  const buildReparationApiPayload = () => ({
+    description: formData.description,
+    statut: formData.statut,
+    cout: Number(formData.cout),
+    vehicule_id: formData.vehicule_id ? Number(formData.vehicule_id) : undefined,
+    user_id: formData.user_id ? Number(formData.user_id) : undefined,
+    date_debut: formData.date_debut || null,
+    date_fin: formData.date_fin || null,
+    date_prevue_fin: formData.date_prevue_fin || null,
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (mode === 'create') {
         if (resource === 'client') await clientsAPI.create(formData);
         if (resource === 'vehicule') await vehiculesAPI.create(buildVehiculeApiPayload());
-        if (resource === 'reparation') await reparationsAPI.create(formData);
+        if (resource === 'reparation') await reparationsAPI.create(buildReparationApiPayload());
         if (resource === 'piece') await piecesAPI.create(buildPieceApiPayload());
         if (resource === 'mecanicien') await mecaniciensAPI.create(formData);
         if (resource === 'comptable') await comptablesAPI.create(formData);
       } else {
         if (resource === 'client') await clientsAPI.update(formData.id, formData);
         if (resource === 'vehicule') await vehiculesAPI.update(formData.id, buildVehiculeApiPayload());
-        if (resource === 'reparation') await reparationsAPI.update(formData.id, formData);
+        if (resource === 'reparation') await reparationsAPI.update(formData.id, buildReparationApiPayload());
         if (resource === 'piece') await piecesAPI.update(formData.id, buildPieceApiPayload());
         if (resource === 'mecanicien') await mecaniciensAPI.update(formData.id, formData);
         if (resource === 'comptable') await comptablesAPI.update(formData.id, formData);

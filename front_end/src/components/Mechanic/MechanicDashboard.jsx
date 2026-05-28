@@ -56,7 +56,7 @@ function tabClass(isActive, isDark) {
         ? 'bg-white text-black shadow-md'
         : 'bg-slate-900 text-white shadow-md'
       : isDark
-        ? 'text-gray-400 hover:text-white hover:bg-white/10'
+        ? 'text-gray-400 hover:text-white hover:ring-1 hover:ring-white/20'
         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
   }`;
 }

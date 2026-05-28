@@ -64,7 +64,10 @@ export const validatePhone = (phone) => {
 };
 
 export const generateInvoiceNumber = (factureId, date) => {
-  const dateStr = date.replace(/-/g, '');
+  const safeDate = typeof date === 'string' && date.trim()
+    ? date
+    : new Date().toISOString().split('T')[0];
+  const dateStr = safeDate.replace(/-/g, '');
   return `FAC-${dateStr}-${String(factureId).padStart(4, '0')}`;
 };
 

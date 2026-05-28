@@ -39,10 +39,11 @@ const apiCall = async (method, endpoint, data = null) => {
   if (!response.ok) {
     let msg = `Erreur ${response.status}`;
     if (body && typeof body === 'object') {
-      if (body.message) msg = body.message;
-      else if (body.errors) {
+      if (body.errors) {
         const first = Object.values(body.errors)[0];
         msg = Array.isArray(first) ? first[0] : String(first);
+      } else if (body.message) {
+        msg = body.message;
       }
     }
     throw new Error(msg);

@@ -39,7 +39,7 @@ import { SimpleRadarChart } from './charts/SimpleRadarChart';
 export default function AccountantDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
   const { isDark } = useTheme();
-  const { clients, factures, reparations, vehicules, loading, error, clearError, refresh } = useAccountantApi(user);
+  const { clients, factures, reparations, vehicules, users, loading, error, clearError, refresh } = useAccountantApi(user);
 
   const financialMetrics = calculateFinancialMetrics(
     factures.factures,
@@ -162,7 +162,7 @@ export default function AccountantDashboard({ user, onLogout }) {
               className={`px-3 md:px-6 py-2 md:py-3 font-semibold text-xs md:text-sm transition-all duration-300 rounded-lg whitespace-nowrap ${
                 activeTab === 'overview'
                   ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
-                  : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                  : isDark ? 'text-gray-400 hover:text-white hover:ring-1 hover:ring-white/20' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
               }`}
             >
               Vue d'ensemble
@@ -173,7 +173,7 @@ export default function AccountantDashboard({ user, onLogout }) {
               className={`px-3 md:px-6 py-2 md:py-3 font-semibold text-xs md:text-sm transition-all duration-300 rounded-lg whitespace-nowrap ${
                 activeTab === 'invoices'
                   ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
-                  : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                  : isDark ? 'text-gray-400 hover:text-white hover:ring-1 hover:ring-white/20' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
               }`}
             >
               Factures
@@ -184,7 +184,7 @@ export default function AccountantDashboard({ user, onLogout }) {
               className={`px-3 md:px-6 py-2 md:py-3 font-semibold text-xs md:text-sm transition-all duration-300 rounded-lg whitespace-nowrap ${
                 activeTab === 'clients'
                   ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
-                  : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                  : isDark ? 'text-gray-400 hover:text-white hover:ring-1 hover:ring-white/20' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
               }`}
             >
               Clients
@@ -195,7 +195,7 @@ export default function AccountantDashboard({ user, onLogout }) {
               className={`px-3 md:px-6 py-2 md:py-3 font-semibold text-xs md:text-sm transition-all duration-300 rounded-lg whitespace-nowrap ${
                 activeTab === 'reports'
                   ? isDark ? 'bg-white text-black shadow-md' : 'bg-slate-900 text-white shadow-md'
-                  : isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                  : isDark ? 'text-gray-400 hover:text-white hover:ring-1 hover:ring-white/20' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
               }`}
             >
               Rapports
@@ -340,7 +340,7 @@ export default function AccountantDashboard({ user, onLogout }) {
               clients={clients.clients}
               reparations={reparations.reparations}
               vehicules={vehicules.vehicules}
-              users={[]}
+              users={users}
             />
           )}
 

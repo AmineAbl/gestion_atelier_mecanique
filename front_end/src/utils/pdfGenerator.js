@@ -1,15 +1,12 @@
 /**
  * Professional PDF Generation Utilities for Financial Reports
- * Uses react-pdf for beautiful, responsive PDF creation
- * Uses jsPDF for financial reports compatibility
+ * Uses jsPDF for financial reports
+ * Uses browser popup + print for individual invoices (full CSS support)
  */
 
-import { pdf } from '@react-pdf/renderer';
 import { jsPDF } from 'jspdf';
-import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import Html from 'react-pdf-html';
 import { generateInvoiceHtml } from './invoiceHtmlGenerator';
+import { findVehicleCsvMatch } from './vehicleCsvLookup';
 import { formatCurrency, formatDate } from './helpers';
 
 /**
@@ -278,37 +275,40 @@ export const generateFinancialReportPDF = (
 };
 
 /**
- * Generate a professional HTML-based invoice PDF using react-pdf
- * This is an async function that generates and downloads the PDF
+ * Generate a professional invoice PDF by opening a styled print window.
+ * Uses the browser's native print-to-PDF capability for full CSS support.
+ * @param {string} theme - 'blue' | 'green' | 'red'
  */
-export const generateInvoicePDF = async (facture, client, reparation, vehicule, mechanic, companyInfo = {}) => {
+export const generateInvoicePDF = async (facture, client, reparation, vehicule, mechanic, companyInfo = {}, theme = 'blue') => {
   try {
-    // Generate HTML content for the invoice
-    const htmlContent = await generateInvoiceHtml(facture, client, reparation, vehicule, mechanic, companyInfo);
+    let vehicleCsvInfo = null;
+    try {
+      vehicleCsvInfo = await findVehicleCsvMatch(vehicule);
+    } catch (csvError) {
+      console.warn('CSV vehicule indisponible:', csvError);
+    }
 
-    // Create a React component that renders the PDF
-    const InvoiceDocument = () => (
-      <Document title={`facture-${facture.id}.pdf`}>
-        <Page size="A4">
-          <Html>{htmlContent}</Html>
-        </Page>
-      </Document>
+    const htmlContent = generateInvoiceHtml(
+      facture,
+      client,
+      reparation,
+      vehicule,
+      mechanic,
+      companyInfo,
+      theme,
+      vehicleCsvInfo
     );
 
-    // Generate PDF blob
-    const blob = await pdf(<InvoiceDocument />).toBlob();
+    const printWindow = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+    if (!printWindow) {
+      throw new Error('Le navigateur a bloqué la fenêtre popup. Veuillez autoriser les popups pour ce site.');
+    }
 
-    // Create download link and trigger download
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `facture-${facture.id}-${new Date().toISOString().split('T')[0]}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error('Erreur génération facture PDF:', error);
     throw error;
   }
 };

@@ -14,6 +14,8 @@ class Facture extends Model
        'total_piece',
        'cout',
        'prix_total',
+             'taxes',
+             'tax_total',
        'date_validation',
        'statut',
          'facture_pdf_path',
@@ -26,7 +28,9 @@ class Facture extends Model
         'date_validation' => 'datetime',
         'cout' => 'decimal:2',
         'prix_total' => 'decimal:2',
+        'tax_total' => 'decimal:2',
         'total_piece' => 'integer',
+        'taxes' => 'array',
     ];
 
     public function user()
