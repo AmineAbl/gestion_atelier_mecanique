@@ -26,6 +26,7 @@ import { Footer } from '../common/Footer';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { CircularMenu } from '../common/CircularMenu';
 import { useTheme } from '../../context/ThemeContext';
+
 import {
   clientsAPI,
   comptablesAPI,
@@ -733,15 +734,6 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
                 value: m.id, 
                 label: `${m.prenom} ${m.nom}` 
               }))}
-              required
-            />
-            <Input
-              label="Coût"
-              type="number"
-              value={formData.cout || ''}
-              onChange={(e) => setFormData({ ...formData, cout: parseFloat(e.target.value) })}
-              step="0.01"
-              min="0"
               required
             />
             <Input

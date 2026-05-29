@@ -41,7 +41,7 @@ return $query->get()
             'date_debut' => ['nullable', 'date'],
             'date_fin' => ['nullable', 'date'],
             'date_prevue_fin' => ['nullable', 'date'],
-            'cout' => ['required', 'numeric', 'min:0'],
+            'cout' => ['nullable', 'numeric', 'min:0'],
             'vehicule_id' => ['required', 'exists:vehicules,id'],
             'user_id' => ['required', 'exists:users,id'],
             'pieces' => ['nullable', 'array'],
