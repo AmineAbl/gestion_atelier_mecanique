@@ -255,7 +255,7 @@ export const Table = ({ columns, data, onRowClick = null }) => {
               onClick={() => onRowClick?.(row)}
               className={`border-b transition-all duration-200 ${
                 isDark 
-                  ? 'border-white/5 ' + (onRowClick ? 'cursor-pointer hover:bg-slate-800/50' : '')
+                  ? 'border-white/5 ' + (onRowClick ? 'cursor-pointer hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.25)]' : '')
                   : 'border-gray-100 ' + (onRowClick ? 'cursor-pointer hover:bg-blue-50' : '')
               }`}
             >

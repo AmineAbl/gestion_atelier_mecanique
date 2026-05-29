@@ -7,16 +7,22 @@
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 
 const apiCall = async (method, endpoint, data = null) => {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+  const headers = {
+    Accept: 'application/json',
+  };
+
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const options = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
+    headers,
   };
 
   if (data != null && method !== 'GET' && method !== 'DELETE') {
-    options.body = JSON.stringify(data);
+    options.body = isFormData ? data : JSON.stringify(data);
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
@@ -33,10 +39,11 @@ const apiCall = async (method, endpoint, data = null) => {
   if (!response.ok) {
     let msg = `Erreur ${response.status}`;
     if (body && typeof body === 'object') {
-      if (body.message) msg = body.message;
-      else if (body.errors) {
+      if (body.errors) {
         const first = Object.values(body.errors)[0];
         msg = Array.isArray(first) ? first[0] : String(first);
+      } else if (body.message) {
+        msg = body.message;
       }
     }
     throw new Error(msg);
@@ -65,6 +72,11 @@ export const facturesAPI = {
   create: (data) => apiCall('POST', '/factures', data),
   update: (id, data) => apiCall('PUT', `/factures/${id}`, data),
   delete: (id) => apiCall('DELETE', `/factures/${id}`),
+  uploadPdf: (id, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiCall('POST', `/factures/${id}/pdf`, formData);
+  },
   
   // Additional operations
   getByStatus: (status) => apiCall('GET', `/factures?statut=${status}`),

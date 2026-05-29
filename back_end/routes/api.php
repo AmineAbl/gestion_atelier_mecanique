@@ -23,6 +23,7 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::apiResource('clients', ClientController::class);
 Route::apiResource('factures', FactureController::class);
+Route::post('factures/{facture}/pdf', [FactureController::class, 'uploadPdf']);
 Route::apiResource('vehicules', VehiculeController::class);
 Route::apiResource('reparations', ReparationController::class);
 Route::apiResource('pieces', PieceController::class);

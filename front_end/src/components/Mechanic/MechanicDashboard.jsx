@@ -18,7 +18,7 @@ import {
   StatusBadge,
   Table,
 } from '../common/UIComponents';
-import { Footer } from '../common/Footer';
+import { StaffFooter } from '../common/StaffFooter';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { CircularMenu } from '../common/CircularMenu';
 import { useTheme } from '../../context/ThemeContext';
@@ -56,7 +56,7 @@ function tabClass(isActive, isDark) {
         ? 'bg-white text-black shadow-md'
         : 'bg-slate-900 text-white shadow-md'
       : isDark
-        ? 'text-gray-400 hover:text-white hover:bg-white/10'
+        ? 'text-gray-400 hover:text-white hover:ring-1 hover:ring-white/20'
         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
   }`;
 }
@@ -442,7 +442,7 @@ export default function MechanicDashboard({ user, onLogout }) {
         </div>
       </div>
 
-      <Footer />
+      <StaffFooter role="mechanic" onNavigate={setActiveTab} />
 
       <div className="fixed bottom-8 right-8 z-40">
         <CircularMenu items={menuItems} onSelect={handleMenuSelect} />

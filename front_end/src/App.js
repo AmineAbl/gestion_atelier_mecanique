@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import LandingPage from './components/Landing/LandingPage';
+import PrivacyPage from './components/Landing/PrivacyPage';
 import LoginPage from './components/LoginPage';
 import AccountantDashboard from './components/AccountantDashboard';
 import WorkshopManagerDashboard from './components/Manager/WorkshopManagerDashboard';
@@ -16,8 +17,22 @@ import { normalizeUser } from './utils/authLogin';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-  /** 'home' | 'login' — écran avant authentification */
+  /** 'home' | 'login' | 'privacy' — écran avant authentification */
   const [authScreen, setAuthScreen] = useState('home');
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#privacy') {
+        setAuthScreen('privacy');
+      } else if (!isAuthenticated) {
+        setAuthScreen('home');
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
@@ -83,6 +98,13 @@ function App() {
           <LoginPage
             onLoginSuccess={handleLoginSuccess}
             onBackToHome={() => setAuthScreen('home')}
+          />
+        ) : authScreen === 'privacy' ? (
+          <PrivacyPage
+            onBack={() => {
+              window.location.hash = '';
+              setAuthScreen('home');
+            }}
           />
         ) : (
           <LandingPage onGoToLogin={() => setAuthScreen('login')} />
