@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -37,6 +38,13 @@ class MecanicienController extends Controller
             'mdp' => Hash::make($data['password']),
             'role' => 'mecanicien',
         ]);
+
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'create', 'mecanicien', $user->id,
+                "Création du mécanicien {$user->prenom} {$user->nom}",
+            );
+        }
 
         return response()->json(
             $user->only(['id', 'nom', 'prenom','cin' , 'email', 'role', 'created_at', 'updated_at']),
@@ -72,7 +80,16 @@ class MecanicienController extends Controller
         }
         unset($data['password']);
 
+        $old = $mecanicien->toArray();
         $mecanicien->update($data);
+
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'update', 'mecanicien', $mecanicien->id,
+                "Modification du mécanicien {$mecanicien->prenom} {$mecanicien->nom}",
+                $old, $mecanicien->fresh()->toArray(),
+            );
+        }
 
         return $mecanicien->fresh()->only(['id', 'nom', 'prenom', 'cin', 'email', 'role', 'created_at', 'updated_at']);
     }
@@ -83,8 +100,24 @@ class MecanicienController extends Controller
             abort(404);
         }
 
+        $label = "{$mecanicien->prenom} {$mecanicien->nom}";
+        $old = $mecanicien->toArray();
         $mecanicien->delete();
 
+        if ($loggedUser = $this->loggedUser(request())) {
+            ActivityLogService::log(
+                $loggedUser, 'delete', 'mecanicien', $mecanicien->id,
+                "Suppression du mécanicien {$label}",
+                $old, null,
+            );
+        }
+
         return response()->json(null, 204);
+    }
+
+    private function loggedUser(Request $request): ?User
+    {
+        $id = $request->header('X-User-Id') ?? $request->input('logged_user_id');
+        return $id ? User::find($id) : null;
     }
 }

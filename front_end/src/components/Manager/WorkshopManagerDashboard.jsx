@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   Calculator,
   Car,
+  ClipboardList,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -29,6 +30,7 @@ import { CircularMenu } from '../common/CircularMenu';
 import { useTheme } from '../../context/ThemeContext';
 
 import {
+  activityLogsAPI,
   clientsAPI,
   comptablesAPI,
   facturesAPI,
@@ -85,13 +87,14 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
   const [pieces, setPieces] = useState([]);
   const [mecaniciens, setMecaniciens] = useState([]);
   const [comptables, setComptables] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
   const [dialog, setDialog] = useState(null);
 
   const refresh = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const [c, v, r, f, p, m, co] = await Promise.all([
+      const [c, v, r, f, p, m, co, logs] = await Promise.all([
         clientsAPI.getAll(),
         vehiculesAPI.getAll(),
         reparationsAPI.getAll(),
@@ -99,6 +102,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
         piecesAPI.getAll(),
         mecaniciensAPI.getAll(),
         comptablesAPI.getAll(),
+        activityLogsAPI.getAll({ limit: 100 }).catch(() => ({ data: [] })),
       ]);
       setClients(Array.isArray(c) ? c : []);
       setVehicules(Array.isArray(v) ? v : []);
@@ -107,6 +111,7 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
       setPieces(Array.isArray(p) ? p : []);
       setMecaniciens(Array.isArray(m) ? m : []);
       setComptables(Array.isArray(co) ? co : []);
+      setActivityLogs(Array.isArray(logs?.data) ? logs.data : []);
     } catch (e) {
       setError(
         e.message ||
@@ -146,7 +151,8 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
     { icon: Car, label: 'Vehicules', action: 'vehicules' },
     { icon: User, label: 'Mecaniciens', action: 'mecaniciens' },
     { icon: Calculator, label: 'Comptables', action: 'comptables' },
-    { icon: Package, label: 'Pieces', action: 'pieces' }
+    { icon: Package, label: 'Pieces', action: 'pieces' },
+    { icon: ClipboardList, label: 'Journal', action: 'activity' }
   ];
 
   const handleMenuSelect = (item) => {
@@ -246,6 +252,11 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
             <button type="button" className={tabClass(activeTab === 'pieces', isDark)} onClick={() => setActiveTab('pieces')}>
               <span className="inline-flex items-center gap-2">
                 <Package className="w-4 h-4" /> Pièces
+              </span>
+            </button>
+            <button type="button" className={tabClass(activeTab === 'activity', isDark)} onClick={() => setActiveTab('activity')}>
+              <span className="inline-flex items-center gap-2">
+                <ClipboardList className="w-4 h-4" /> Journal
               </span>
             </button>
           </div>
@@ -579,6 +590,10 @@ export default function WorkshopManagerDashboard({ user, onLogout }) {
                   </Button>
                 </SectionCard>
               )}
+
+              {activeTab === 'activity' && (
+                <ActivityLogSection logs={activityLogs} isDark={isDark} />
+              )}
             </>
           )}
         </div>
@@ -615,6 +630,98 @@ function SectionCard({ title, children }) {
       <h2 className={`text-xl font-bold mb-4 pb-3 border-b ${isDark ? 'text-white border-white/15' : 'text-gray-900 border-gray-300'}`}>{title}</h2>
       {children}
     </Card>
+  );
+}
+
+const ACTION_LABELS = {
+  login: 'Connexion',
+  logout: 'Déconnexion',
+  create: 'Création',
+  update: 'Modification',
+  delete: 'Suppression',
+};
+
+const ENTITY_LABELS = {
+  auth: 'Authentification',
+  client: 'Client',
+  vehicule: 'Véhicule',
+  reparation: 'Réparation',
+  facture: 'Facture',
+  piece: 'Pièce',
+  mecanicien: 'Mécanicien',
+  comptable: 'Comptable',
+};
+
+function ActivityLogSection({ logs, isDark }) {
+  const formatLogDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const actionColor = (action) => {
+    switch (action) {
+      case 'create': return 'text-green-500';
+      case 'update': return 'text-blue-500';
+      case 'delete': return 'text-red-500';
+      case 'login': return 'text-purple-500';
+      default: return 'text-gray-400';
+    }
+  };
+
+  return (
+    <SectionCard title="Journal d'activité">
+      {logs.length === 0 ? (
+        <EmptyState message="Aucune activité enregistrée pour le moment." />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className={`w-full text-sm ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+            <thead>
+              <tr className={`border-b ${isDark ? 'border-white/10' : 'border-gray-300'}`}>
+                <th className="text-left py-3 px-3 font-semibold">Date</th>
+                <th className="text-left py-3 px-3 font-semibold">Utilisateur</th>
+                <th className="text-left py-3 px-3 font-semibold">Action</th>
+                <th className="text-left py-3 px-3 font-semibold">Entité</th>
+                <th className="text-left py-3 px-3 font-semibold">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((log) => (
+                <tr
+                  key={log.id}
+                  className={`border-b ${isDark ? 'border-white/5 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-50'} transition-colors`}
+                >
+                  <td className="py-2 px-3 text-xs whitespace-nowrap">{formatLogDate(log.created_at)}</td>
+                  <td className="py-2 px-3 font-medium">{log.user_name}</td>
+                  <td className="py-2 px-3">
+                    <span className={`font-semibold ${actionColor(log.action)}`}>
+                      {ACTION_LABELS[log.action] || log.action}
+                    </span>
+                  </td>
+                  <td className="py-2 px-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      isDark ? 'bg-slate-700 text-gray-200' : 'bg-gray-200 text-gray-700'
+                    }`}>
+                      {ENTITY_LABELS[log.entity_type] || log.entity_type}
+                    </span>
+                  </td>
+                  <td className="py-2 px-3 text-xs">{log.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className={`mt-3 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+        {logs.length} entrée{logs.length > 1 ? 's' : ''} affichée{logs.length > 1 ? 's' : ''}
+      </div>
+    </SectionCard>
   );
 }
 

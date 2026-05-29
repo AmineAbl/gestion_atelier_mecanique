@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 
 class ClientController extends Controller
@@ -23,7 +25,16 @@ class ClientController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
         ]);
 
-        return response()->json(Client::query()->create($data), 201);
+        $client = Client::query()->create($data);
+
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'create', 'client', $client->id,
+                "Création du client {$client->prenom} {$client->nom}",
+            );
+        }
+
+        return response()->json($client, 201);
     }
 
     public function show(Client $client)
@@ -41,15 +52,40 @@ class ClientController extends Controller
             'email' => ['sometimes', 'nullable', 'email', 'max:255'],
         ]);
 
+        $old = $client->toArray();
         $client->update($data);
+
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'update', 'client', $client->id,
+                "Modification du client {$client->prenom} {$client->nom}",
+                $old, $client->fresh()->toArray(),
+            );
+        }
 
         return $client->fresh();
     }
 
     public function destroy(Client $client)
     {
+        $label = "{$client->prenom} {$client->nom}";
+        $old = $client->toArray();
         $client->delete();
 
+        if ($loggedUser = $this->loggedUser(request())) {
+            ActivityLogService::log(
+                $loggedUser, 'delete', 'client', $client->id,
+                "Suppression du client {$label}",
+                $old, null,
+            );
+        }
+
         return response()->json(null, 204);
+    }
+
+    private function loggedUser(Request $request): ?User
+    {
+        $id = $request->header('X-User-Id') ?? $request->input('logged_user_id');
+        return $id ? User::find($id) : null;
     }
 }

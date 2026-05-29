@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Piece;
 use App\Models\Reparation;
+use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -76,6 +78,13 @@ return $query->get()
             return $reparation;
         });
 
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'create', 'reparation', $reparation->id,
+                "Création de la réparation #{$reparation->id}",
+            );
+        }
+
         return response()->json(
             $this->serializeReparation($reparation->load(['vehicule.client', 'mecanicien', 'pieces'])),
             201
@@ -117,6 +126,8 @@ return $query->get()
             unset($data['pieces']);
         }
 
+        $old = $reparation->toArray();
+
         DB::transaction(function () use ($reparation, $data, $pieces) {
             $reparation->update($data);
 
@@ -140,6 +151,14 @@ return $query->get()
             }
         });
 
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'update', 'reparation', $reparation->id,
+                "Modification de la réparation #{$reparation->id}",
+                $old, $reparation->fresh()->toArray(),
+            );
+        }
+
         return $this->serializeReparation(
             $reparation->fresh()->load(['vehicule.client', 'mecanicien', 'pieces'])
         );
@@ -147,6 +166,9 @@ return $query->get()
 
     public function destroy(Reparation $reparation)
     {
+        $old = $reparation->toArray();
+        $id = $reparation->id;
+
         DB::transaction(function () use ($reparation) {
             $oldQuantities = $reparation->pieces()
                 ->get()
@@ -156,6 +178,14 @@ return $query->get()
             $this->adjustPieceStock($oldQuantities, []);
             $reparation->delete();
         });
+
+        if ($loggedUser = $this->loggedUser(request())) {
+            ActivityLogService::log(
+                $loggedUser, 'delete', 'reparation', $id,
+                "Suppression de la réparation #{$id}",
+                $old, null,
+            );
+        }
 
         return response()->json(null, 204);
     }
@@ -233,6 +263,12 @@ return $query->get()
      * @param  array<int, int>  $oldQuantities
      * @param  array<int, int>  $newQuantities
      */
+    private function loggedUser(Request $request): ?User
+    {
+        $id = $request->header('X-User-Id') ?? $request->input('logged_user_id');
+        return $id ? User::find($id) : null;
+    }
+
     private function adjustPieceStock(array $oldQuantities, array $newQuantities): void
     {
         $pieceIds = array_unique(array_merge(array_keys($oldQuantities), array_keys($newQuantities)));

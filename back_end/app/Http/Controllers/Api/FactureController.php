@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Facture;
 use App\Models\Reparation;
+use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -49,6 +51,13 @@ class FactureController extends Controller
         $data = $this->applyTaxes($data);
         $facture = Facture::query()->create($data);
 
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'create', 'facture', $facture->id,
+                "Création de la facture #{$facture->id}",
+            );
+        }
+
         return response()->json($this->serializeFacture($facture->load(['reparation.vehicule.client', 'user'])), 201);
     }
 
@@ -90,8 +99,17 @@ class FactureController extends Controller
         // Keep client_id in the data - it's now stored directly in the factures table
         // This allows proper retrieval even if relationships aren't eagerly loaded
 
+        $old = $facture->toArray();
         $data = $this->applyTaxes($data);
         $facture->update($data);
+
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'update', 'facture', $facture->id,
+                "Modification de la facture #{$facture->id}",
+                $old, $facture->fresh()->toArray(),
+            );
+        }
 
         return $this->serializeFacture($facture->fresh()->load(['reparation.vehicule.client', 'user']));
     }
@@ -102,7 +120,16 @@ class FactureController extends Controller
             Storage::disk('public')->delete($facture->facture_pdf_path);
         }
 
+        $old = $facture->toArray();
         $facture->delete();
+
+        if ($loggedUser = $this->loggedUser(request())) {
+            ActivityLogService::log(
+                $loggedUser, 'delete', 'facture', $facture->id,
+                "Suppression de la facture #{$facture->id}",
+                $old, null,
+            );
+        }
 
         return response()->json(null, 204);
     }
@@ -120,6 +147,13 @@ class FactureController extends Controller
         $path = $data['file']->store('factures', 'public');
         $facture->facture_pdf_path = $path;
         $facture->save();
+
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'update', 'facture', $facture->id,
+                "Upload du PDF pour la facture #{$facture->id}",
+            );
+        }
 
         return response()->json($this->serializeFacture($facture->fresh()->load(['reparation.vehicule.client', 'user'])));
     }
@@ -154,6 +188,12 @@ class FactureController extends Controller
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
+    private function loggedUser(Request $request): ?User
+    {
+        $id = $request->header('X-User-Id') ?? $request->input('logged_user_id');
+        return $id ? User::find($id) : null;
+    }
+
     private function applyTaxes(array $data): array
     {
         if (!array_key_exists('taxes', $data) || !array_key_exists('cout', $data)) {

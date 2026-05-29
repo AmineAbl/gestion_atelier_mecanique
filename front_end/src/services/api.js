@@ -6,11 +6,27 @@
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 
+const getActingUserId = () => {
+  try {
+    const stored = localStorage.getItem('currentUser');
+    if (stored) {
+      const user = JSON.parse(stored);
+      return user?.id || null;
+    }
+  } catch {}
+  return null;
+};
+
 const apiCall = async (method, endpoint, data = null) => {
   const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
   const headers = {
     Accept: 'application/json',
   };
+
+  const userId = getActingUserId();
+  if (userId) {
+    headers['X-User-Id'] = String(userId);
+  }
 
   if (!isFormData) {
     headers['Content-Type'] = 'application/json';
@@ -188,6 +204,13 @@ export const authAPI = {
     apiCall('PUT', '/auth/profile', data)
 };
 
+export const activityLogsAPI = {
+  getAll: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return apiCall('GET', `/activity-logs${query ? '?' + query : ''}`);
+  },
+};
+
 const apiServices = {
   clientsAPI,
   facturesAPI,
@@ -198,6 +221,7 @@ const apiServices = {
   comptablesAPI,
   reportsAPI,
   authAPI,
+  activityLogsAPI,
 };
 
 export default apiServices;

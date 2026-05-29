@@ -8,6 +8,7 @@ import WorkshopManagerDashboard from './components/Manager/WorkshopManagerDashbo
 import MechanicDashboard from './components/Mechanic/MechanicDashboard';
 import { ThemeProvider } from './context/ThemeContext';
 import { normalizeUser } from './utils/authLogin';
+import { authAPI } from './services/api';
 
 /**
  * Main App Component
@@ -56,6 +57,7 @@ function App() {
   };
 
   const handleLogout = () => {
+    authAPI.logout().catch(() => {});
     setUser(null);
     setIsAuthenticated(false);
     setAuthScreen('home');

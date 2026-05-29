@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -37,6 +38,13 @@ class ComptableController extends Controller
             'mdp' => Hash::make($data['password']),
             'role' => 'comptable',
         ]);
+
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'create', 'comptable', $user->id,
+                "Création du comptable {$user->prenom} {$user->nom}",
+            );
+        }
 
         return response()->json(
             $user->only(['id', 'nom', 'prenom', 'cin', 'email', 'role', 'created_at', 'updated_at']),
@@ -72,7 +80,16 @@ class ComptableController extends Controller
         }
         unset($data['password']);
 
+        $old = $comptable->toArray();
         $comptable->update($data);
+
+        if ($loggedUser = $this->loggedUser($request)) {
+            ActivityLogService::log(
+                $loggedUser, 'update', 'comptable', $comptable->id,
+                "Modification du comptable {$comptable->prenom} {$comptable->nom}",
+                $old, $comptable->fresh()->toArray(),
+            );
+        }
 
         return $comptable->fresh()->only(['id', 'nom', 'prenom', 'cin', 'email', 'role', 'created_at', 'updated_at']);
     }
@@ -83,8 +100,24 @@ class ComptableController extends Controller
             abort(404);
         }
 
+        $label = "{$comptable->prenom} {$comptable->nom}";
+        $old = $comptable->toArray();
         $comptable->delete();
 
+        if ($loggedUser = $this->loggedUser(request())) {
+            ActivityLogService::log(
+                $loggedUser, 'delete', 'comptable', $comptable->id,
+                "Suppression du comptable {$label}",
+                $old, null,
+            );
+        }
+
         return response()->json(null, 204);
+    }
+
+    private function loggedUser(Request $request): ?User
+    {
+        $id = $request->header('X-User-Id') ?? $request->input('logged_user_id');
+        return $id ? User::find($id) : null;
     }
 }

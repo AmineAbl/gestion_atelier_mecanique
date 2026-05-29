@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ComptableController;
@@ -20,6 +21,7 @@ Route::bind('comptable', function (string $value) {
 });
 
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 Route::apiResource('clients', ClientController::class);
 Route::apiResource('factures', FactureController::class);
@@ -29,3 +31,5 @@ Route::apiResource('reparations', ReparationController::class);
 Route::apiResource('pieces', PieceController::class);
 Route::apiResource('mecaniciens', MecanicienController::class);
 Route::apiResource('comptables', ComptableController::class);
+
+Route::get('/activity-logs', [ActivityLogController::class, 'index']);
