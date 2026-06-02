@@ -81,7 +81,8 @@
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: linear-gradient(135deg, #0f172a 0%, #1a1f3a 50%, #0f172a 100%);
   color: #ffffff;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
   position: relative;
 }
 
@@ -182,24 +183,22 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
 }
 
-.logo-icon {
-  width: 28px;
-  height: 28px;
-  color: #ffffff;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+.app-logo-img {
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
-.logo-text {
-  background: linear-gradient(135deg, #ffffff, #e5e5e5);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.app-logo-img--header {
+  height: clamp(28px, 4vw, 38px);
+  max-width: min(220px, 52vw);
+}
+
+.app-logo-img--footer {
+  height: clamp(30px, 4.5vw, 42px);
+  max-width: min(240px, 70vw);
 }
 
 .login-button {
@@ -1180,15 +1179,11 @@
 .footer-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 18px;
-  font-weight: 600;
 }
 
-.footer-icon {
-  width: 24px;
-  height: 24px;
-  color: #3b82f6;
+.footer-logo-picture {
+  display: block;
+  line-height: 0;
 }
 
 .footer-text {
@@ -1203,6 +1198,37 @@
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   text-align: center;
+}
+
+@media (prefers-color-scheme: light) {
+  .footer-section {
+    background: rgba(248, 250, 252, 0.92);
+    border-top-color: rgba(15, 23, 42, 0.12);
+  }
+
+  .footer-heading {
+    color: rgba(15, 23, 42, 0.9);
+  }
+
+  .footer-links a {
+    color: rgba(15, 23, 42, 0.65);
+  }
+
+  .footer-links a:hover {
+    color: #0f172a;
+  }
+
+  .footer-link-icon {
+    color: rgba(15, 23, 42, 0.55);
+  }
+
+  .footer-text {
+    color: rgba(15, 23, 42, 0.6);
+  }
+
+  .footer-bottom {
+    border-top-color: rgba(15, 23, 42, 0.1);
+  }
 }
 
 /* =====================================================
@@ -1221,6 +1247,7 @@
   border: none;
   z-index: 2;
   overflow: visible;
+  isolation: isolate;
   margin-top: 40px;
   margin-bottom: 40px;
 }
@@ -1258,6 +1285,7 @@
   padding: 0;
   position: relative;
   z-index: 3;
+  overflow: visible;
 }
 
 .marquee-label {
@@ -1271,13 +1299,33 @@
   padding: 0 20px;
 }
 
-.marquee-custom {
+.marquee-custom,
+.marquee-strip {
   box-shadow: none;
   border-radius: 0;
-  overflow: visible;
   border: none;
   width: 100%;
+  max-width: 100vw;
   background: transparent;
+}
+
+.marquee-strip__fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* SVG repo logos are mostly black — invert for dark landing page */
+.marquee-brand-logo {
+  filter: brightness(0) invert(1);
+  opacity: 0.88;
+}
+
+@media (prefers-color-scheme: light) {
+  .marquee-brand-logo {
+    filter: none;
+    opacity: 0.92;
+  }
 }
 
 /* =====================================================
@@ -1354,4 +1402,56 @@
   .stats-container {
     grid-template-columns: 1fr;
   }
+}
+
+/* =====================================================
+   notAbot CAPTCHA WIDGET — landing page integration
+   ===================================================== */
+
+.notabot-field {
+  /* let the captcha widget control its own internal sizing */
+}
+
+.notabot-captcha-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 10px;
+}
+
+.notabot-captcha-wrapper {
+  position: relative;
+  min-height: 56px;
+  overflow: visible;
+}
+
+/* Only the trigger row lives in the form; scene stays in portaled modal */
+.notabot-captcha-wrapper > .captcha-widget {
+  display: inline-block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.notabot-captcha-ok {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4ade80;
+  letter-spacing: 0.3px;
+}
+
+/* Safety: never show challenge UI inline in the form */
+.notabot-captcha-wrapper .captcha-modal,
+.captcha-modal:not(.captcha-modal--open) {
+  display: none !important;
+}
+
+.captcha-modal.captcha-modal--open {
+  z-index: 100000 !important;
+}
+
+.contact-form,
+.contact-section {
+  overflow: visible;
 }

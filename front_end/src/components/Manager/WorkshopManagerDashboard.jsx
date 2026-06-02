@@ -950,6 +950,7 @@ function EntityDialog({ isOpen, onClose, resource, mode, data, onRefresh, vehicu
               options={REPARATION_STATUTS}
               required
             />
+            
             <Button type="submit" className="mt-4">
               {mode === 'create' ? 'Créer Réparation' : 'Mettre à jour Réparation'}
             </Button>

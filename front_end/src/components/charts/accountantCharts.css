@@ -1,0 +1,15 @@
+.chart-shell .recharts-cartesian-grid-horizontal line:last-child {
+  stroke-opacity: 0;
+}
+
+.chart-shell .recharts-layer:focus {
+  outline: none;
+}
+
+.chart-shell .recharts-surface {
+  overflow: visible;
+}
+
+.chart-funnel {
+  min-height: 280px;
+}

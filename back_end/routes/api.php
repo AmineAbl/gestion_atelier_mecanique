@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\CaptchaController;
+use App\Http\Controllers\Api\DemoRequestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ComptableController;
@@ -22,6 +24,10 @@ Route::bind('comptable', function (string $value) {
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+Route::get('/challenge', [CaptchaController::class, 'challenge']);
+Route::post('/verify', [CaptchaController::class, 'verify']);
+Route::post('/demo-requests', [DemoRequestController::class, 'store']);
 
 Route::apiResource('clients', ClientController::class);
 Route::apiResource('factures', FactureController::class);

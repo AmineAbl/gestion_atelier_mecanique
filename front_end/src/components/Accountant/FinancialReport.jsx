@@ -1,42 +1,110 @@
-import React, { useState, useMemo } from 'react';
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line
-} from 'recharts';
-import {
-  Download,
-  Calendar
-} from 'lucide-react';
-import {
-  Card,
-  Button,
-  Select
-} from '../common/UIComponents';
-import {
-  formatCurrency,
-  calculateFinancialMetrics
-} from '../../utils/helpers';
+import React from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Download, TrendingUp, TrendingDown, Wallet, Percent } from 'lucide-react';
+import { Card, Button } from '../common/UIComponents';
+import { formatCurrency, calculateFinancialMetrics } from '../../utils/helpers';
 import { generateFinancialReportPDF } from '../../utils/pdfGenerator';
 import { useTheme } from '../../context/ThemeContext';
+import { ReportTrendChart } from '../charts/ReportTrendChart';
+import { SimpleBarChart } from '../charts/SimpleBarChart';
+import { ChartShell } from '../charts/ChartShell';
+import { ChartTooltip } from '../charts/ChartTooltip';
+import { CHART_COLORS, getChartTheme } from '../charts/chartTheme';
+import '../charts/accountantCharts.css';
 
 /**
  * Financial Report Component
  * Shows comprehensive financial reports and analytics
  */
+function ReportDonutChart({ data, title, description, emptyMessage = 'Aucune donnée' }) {
+  const { isDark } = useTheme();
+  const theme = getChartTheme(isDark);
+  const filtered = data.filter((d) => d.value > 0);
+  const total = filtered.reduce((s, d) => s + d.value, 0);
+
+  if (!filtered.length) {
+    return (
+      <ChartShell title={title} description={description} height={320}>
+        <div className="flex h-full items-center justify-center text-sm" style={{ color: theme.tooltipMuted }}>
+          {emptyMessage}
+        </div>
+      </ChartShell>
+    );
+  }
+
+  return (
+    <ChartShell title={title} description={description} height={320}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={filtered}
+            cx="50%"
+            cy="50%"
+            innerRadius={58}
+            outerRadius={96}
+            paddingAngle={3}
+            dataKey="value"
+            stroke={isDark ? '#0f172a' : '#ffffff'}
+            strokeWidth={2}
+            isAnimationActive
+          >
+            {filtered.map((entry) => (
+              <Cell key={entry.name} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip
+            content={
+              <ChartTooltip
+                formatter={(v) => [`${v} (${total ? Math.round((v / total) * 100) : 0}%)`, '']}
+              />
+            }
+          />
+          <Legend
+            verticalAlign="bottom"
+            height={40}
+            iconType="circle"
+            iconSize={8}
+            formatter={(value) => <span style={{ color: theme.tick, fontSize: 12 }}>{value}</span>}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </ChartShell>
+  );
+}
+
+function MetricTile({ label, value, tone = 'neutral', icon: Icon }) {
+  const { isDark } = useTheme();
+  const theme = getChartTheme(isDark);
+  const tones = {
+    green: isDark ? 'text-emerald-400' : 'text-emerald-600',
+    red: isDark ? 'text-rose-400' : 'text-rose-600',
+    blue: isDark ? 'text-sky-400' : 'text-sky-600',
+    neutral: isDark ? 'text-white' : 'text-gray-900',
+  };
+
+  return (
+    <div
+      className="rounded-2xl border p-5 shadow-lg transition-all"
+      style={{ background: theme.cardBg, borderColor: theme.cardBorder }}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{label}</p>
+        {Icon && <Icon className={`h-5 w-5 ${tones[tone]}`} />}
+      </div>
+      <p className={`text-2xl font-bold tracking-tight md:text-3xl ${tones[tone]}`}>{value}</p>
+    </div>
+  );
+}
+
+const TREND_LINES = [
+  { dataKey: 'revenue', color: CHART_COLORS.green, label: 'Revenu' },
+  { dataKey: 'costs', color: CHART_COLORS.rose, label: 'Coûts' },
+  { dataKey: 'profit', color: CHART_COLORS.blue, label: 'Bénéfice' },
+];
+
 export default function FinancialReport({ factures, reparations, clients }) {
   const { isDark } = useTheme();
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().split('T')[0].slice(0, 7));
+  const theme = getChartTheme(isDark);
 
   // Calculate financial metrics
   const metrics = calculateFinancialMetrics(factures, reparations);
@@ -100,9 +168,9 @@ export default function FinancialReport({ factures, reparations, clients }) {
     });
 
     return [
-      { name: 'Payée', value: statuses.paid, color: '#10b981' },
-      { name: 'En attente', value: statuses.pending, color: '#f59e0b' },
-      { name: 'Annulée', value: statuses.cancelled, color: '#ef4444' }
+      { name: 'Payée', value: statuses.paid, color: CHART_COLORS.green },
+      { name: 'En attente', value: statuses.pending, color: CHART_COLORS.amber },
+      { name: 'Annulée', value: statuses.cancelled, color: CHART_COLORS.rose },
     ];
   };
 
@@ -146,9 +214,9 @@ export default function FinancialReport({ factures, reparations, clients }) {
     });
 
     return [
-      { name: 'Terminées', value: statuses.completed, color: '#3b82f6' },
-      { name: 'En cours', value: statuses['in-progress'], color: '#8b5cf6' },
-      { name: 'En attente', value: statuses.pending, color: '#ec4899' }
+      { name: 'Terminées', value: statuses.completed, color: CHART_COLORS.green },
+      { name: 'En cours', value: statuses['in-progress'], color: CHART_COLORS.blue },
+      { name: 'En attente', value: statuses.pending, color: CHART_COLORS.amber },
     ];
   };
 
@@ -185,138 +253,56 @@ export default function FinancialReport({ factures, reparations, clients }) {
       </Card>
 
       {/* Key Metrics Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Revenu total</p>
-          <p className={`text-3xl font-bold mt-2 ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-            {formatCurrency(metrics.totalRevenue)}
-          </p>
-        </Card>
-        <Card>
-          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Coûts totaux</p>
-          <p className={`text-3xl font-bold mt-2 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
-            {formatCurrency(metrics.totalCosts)}
-          </p>
-        </Card>
-        <Card>
-          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Bénéfice net</p>
-          <p className={`text-3xl font-bold mt-2 ${
-            metrics.totalProfit >= 0 ? (isDark ? 'text-green-400' : 'text-green-600') : (isDark ? 'text-red-400' : 'text-red-600')
-          }`}>
-            {formatCurrency(metrics.totalProfit)}
-          </p>
-        </Card>
-        <Card>
-          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Marge bénéficiaire</p>
-          <p className={`text-3xl font-bold mt-2 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-            {metrics.profitMargin}%
-          </p>
-        </Card>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricTile label="Revenu total" value={formatCurrency(metrics.totalRevenue)} tone="green" icon={TrendingUp} />
+        <MetricTile label="Coûts totaux" value={formatCurrency(metrics.totalCosts)} tone="red" icon={TrendingDown} />
+        <MetricTile
+          label="Bénéfice net"
+          value={formatCurrency(metrics.totalProfit)}
+          tone={metrics.totalProfit >= 0 ? 'green' : 'red'}
+          icon={Wallet}
+        />
+        <MetricTile label="Marge bénéficiaire" value={`${metrics.profitMargin}%`} tone="blue" icon={Percent} />
       </div>
 
-      {/* Monthly Trend Chart */}
-      <Card>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Tendance mensuelle (Revenu vs Coûts)</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#374151' : '#e5e7eb'} />
-            <XAxis dataKey="month" stroke={isDark ? '#9ca3af' : '#6b7280'} />
-            <YAxis stroke={isDark ? '#9ca3af' : '#6b7280'} />
-            <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', border: 'none', borderRadius: '8px', color: isDark ? '#f3f4f6' : '#111827' }} />
-            <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="revenue" 
-              stroke={isDark ? '#34d399' : '#10b981'} 
-              name="Revenu"
-              strokeWidth={2}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="costs" 
-              stroke={isDark ? '#f87171' : '#ef4444'} 
-              name="Coûts"
-              strokeWidth={2}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="profit" 
-              stroke={isDark ? '#60a5fa' : '#3b82f6'} 
-              name="Bénéfice"
-              strokeWidth={2}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </Card>
+      <ReportTrendChart
+        data={monthlyData}
+        title="Tendance mensuelle"
+        description="Revenus, coûts et bénéfice sur les 12 derniers mois"
+        lines={TREND_LINES}
+        formatValue={formatCurrency}
+        height={360}
+      />
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Invoice Status Distribution */}
-        <Card>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Statut des factures</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={invoiceStatusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={(entry) => `${entry.name} (${entry.value})`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {invoiceStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
-
-        {/* Repair Status Distribution */}
-        <Card>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Statut des réparations</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={repairStatusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={(entry) => `${entry.name} (${entry.value})`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {repairStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', border: 'none', borderRadius: '8px', color: isDark ? '#f3f4f6' : '#111827' }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ReportDonutChart
+          data={invoiceStatusData}
+          title="Statut des factures"
+          description="Répartition des factures par statut"
+        />
+        <ReportDonutChart
+          data={repairStatusData}
+          title="Statut des réparations"
+          description="Avancement des interventions"
+        />
       </div>
 
-      {/* Top Clients */}
-      <Card>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Top 5 des clients</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={topClients}>
-            <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#374151' : '#e5e7eb'} />
-            <XAxis dataKey="name" stroke={isDark ? '#9ca3af' : '#6b7280'} />
-            <YAxis stroke={isDark ? '#9ca3af' : '#6b7280'} />
-            <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', border: 'none', borderRadius: '8px', color: isDark ? '#f3f4f6' : '#111827' }} />
-            <Bar dataKey="amount" fill={isDark ? '#60a5fa' : '#3b82f6'} name="Total dépensé" />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+      <SimpleBarChart
+        data={topClients}
+        title="Top 5 des clients"
+        description="Chiffre d'affaires par client (factures payées)"
+        dataKey="amount"
+        fill={CHART_COLORS.blue}
+        formatValue={formatCurrency}
+      />
 
-      {/* Detailed Statistics Table */}
-      <Card>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Statistiques détaillées</h3>
+      <Card
+        className="overflow-hidden"
+        style={{ background: theme.cardBg, borderColor: theme.cardBorder }}
+      >
+        <h3 className={`mb-4 text-lg font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          Statistiques détaillées
+        </h3>
         <div className="overflow-x-auto">
           <table className={`w-full text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
             <thead className={isDark ? 'bg-slate-800' : 'bg-gray-100'}>

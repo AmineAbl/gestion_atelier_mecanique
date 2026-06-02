@@ -33,7 +33,7 @@ function normalizeFacture(f) {
   // Use Number() to ensure types match when comparing in components
   const reparationId = f.reparationId || f.reparation_id ? Number(f.reparationId || f.reparation_id) : null;
   const userId = f.userId || f.user_id ? Number(f.userId || f.user_id) : null;
-  
+
   // Try to find clientId from direct field (API returns camelCase) or nested relationships
   let clientId = f.clientId ? Number(f.clientId) : null;
   if (!clientId && f.client_id) {

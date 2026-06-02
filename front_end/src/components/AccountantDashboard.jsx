@@ -35,6 +35,8 @@ import { SimpleFunnelChart } from './charts/SimpleFunnelChart';
 import { SimpleLineChart } from './charts/SimpleLineChart';
 import { SimpleBarChart } from './charts/SimpleBarChart';
 import { SimpleRadarChart } from './charts/SimpleRadarChart';
+import { CHART_COLORS } from './charts/chartTheme';
+import './charts/accountantCharts.css';
 
 export default function AccountantDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -49,11 +51,40 @@ export default function AccountantDashboard({ user, onLogout }) {
   const repairsOverview = getRepairsOverview(reparations.reparations);
 
   // Prepare chart data
-  const invoicesFunnelData = useMemo(() => [
-    { label: 'Total Factures', value: factures.factures.length, color: 'bg-blue-500' },
-    { label: 'Factures Payées', value: factures.factures.filter(f => f.statut === 'paid').length, color: 'bg-green-500' },
-    { label: 'Factures En Attente', value: factures.factures.filter(f => f.statut === 'pending').length, color: 'bg-amber-500' },
-  ], [factures.factures]);
+  const invoicesFunnelData = useMemo(() => {
+    const total = factures.factures.length;
+    const paid = factures.factures.filter((f) => f.statut === 'paid').length;
+    const pending = factures.factures.filter((f) => f.statut === 'pending').length;
+    return [
+      {
+        label: 'Total Factures',
+        value: Math.max(total, 1),
+        color: CHART_COLORS.blue,
+        gradient: [
+          { offset: 0, color: CHART_COLORS.blueLight },
+          { offset: 1, color: CHART_COLORS.blue },
+        ],
+      },
+      {
+        label: 'Factures Payées',
+        value: paid,
+        color: CHART_COLORS.green,
+        gradient: [
+          { offset: 0, color: CHART_COLORS.greenLight },
+          { offset: 1, color: CHART_COLORS.green },
+        ],
+      },
+      {
+        label: 'Factures En Attente',
+        value: pending,
+        color: CHART_COLORS.amber,
+        gradient: [
+          { offset: 0, color: CHART_COLORS.amberLight },
+          { offset: 1, color: CHART_COLORS.amber },
+        ],
+      },
+    ];
+  }, [factures.factures]);
 
   const repairsLineChartData = useMemo(() => {
     const months = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun'];
@@ -64,11 +95,16 @@ export default function AccountantDashboard({ user, onLogout }) {
     }));
   }, [repairsOverview]);
 
-  const repairsBarChartData = useMemo(() => [
-    { name: 'Terminées', value: repairsOverview.completed },
-    { name: 'En Cours', value: repairsOverview.inProgress },
-    { name: 'En Attente', value: repairsOverview.pending },
-  ], [repairsOverview]);
+  const repairsBarChartData = useMemo(
+    () => [
+      { name: 'Terminées', value: repairsOverview.completed },
+      { name: 'En Cours', value: repairsOverview.inProgress },
+      { name: 'En Attente', value: repairsOverview.pending },
+    ],
+    [repairsOverview]
+  );
+
+  const repairsBarColors = [CHART_COLORS.green, CHART_COLORS.blue, CHART_COLORS.amber];
 
   const financialRadarData = useMemo(() => [
     { name: 'Revenus', value: Math.min(100, (financialMetrics.totalRevenue / 10000) * 100) },
@@ -304,30 +340,36 @@ export default function AccountantDashboard({ user, onLogout }) {
               {/* Charts Section */}
               <div className="my-8 space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <SimpleFunnelChart 
+                  <SimpleFunnelChart
                     data={invoicesFunnelData}
                     title="Entonnoir des Factures"
+                    description="Du volume total aux factures payées et en attente"
                   />
-                  <SimpleBarChart 
+                  <SimpleBarChart
                     data={repairsBarChartData}
                     title="Statut des Réparations"
+                    description="Répartition actuelle des interventions"
                     dataKey="value"
-                    fill="#10b981"
+                    colors={repairsBarColors}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <SimpleLineChart 
+                  <SimpleLineChart
                     data={repairsLineChartData}
                     title="Tendance des Réparations (6 mois)"
-                    dataKey="completed"
-                    strokeColor="#3b82f6"
+                    description="Évolution estimée des réparations terminées et en attente"
+                    lines={[
+                      { dataKey: 'completed', color: CHART_COLORS.green, label: 'Terminées' },
+                      { dataKey: 'pending', color: CHART_COLORS.amber, label: 'En attente' },
+                    ]}
                   />
-                  <SimpleRadarChart 
+                  <SimpleRadarChart
                     data={financialRadarData}
                     title="Analyse Financière"
+                    description="Revenus, coûts, bénéfice et marge (échelle relative)"
                     dataKey="value"
-                    stroke="#8b5cf6"
+                    stroke={CHART_COLORS.violet}
                   />
                 </div>
               </div>

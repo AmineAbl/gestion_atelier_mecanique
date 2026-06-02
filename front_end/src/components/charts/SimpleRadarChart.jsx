@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -7,54 +7,63 @@ import {
   Radar,
   ResponsiveContainer,
   Tooltip,
-  Legend
 } from 'recharts';
 import { useTheme } from '../../context/ThemeContext';
+import { ChartShell } from './ChartShell';
+import { ChartTooltip } from './ChartTooltip';
+import { CHART_COLORS, getChartTheme } from './chartTheme';
+import './accountantCharts.css';
 
-export function SimpleRadarChart({ data, title, dataKey, stroke = '#8b5cf6' }) {
+export function SimpleRadarChart({
+  data,
+  title,
+  description,
+  dataKey = 'value',
+  stroke = CHART_COLORS.violet,
+  formatValue,
+}) {
   const { isDark } = useTheme();
-  
-  if (!data || data.length === 0) return null;
+  const theme = getChartTheme(isDark);
+  const fillId = useId().replace(/:/g, '');
+
+  if (!data?.length) return null;
+
+  const valueFormatter = formatValue ? (v) => [formatValue(v), ''] : undefined;
 
   return (
-    <div className={`w-full p-6 rounded-lg border ${isDark ? 'bg-slate-800 border-white/10' : 'bg-white border-gray-300'}`}>
-      <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>{title}</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <RadarChart data={data}>
-          <PolarGrid 
-            stroke={isDark ? '#374151' : '#e5e7eb'}
-            strokeDasharray="5 5"
-          />
-          <PolarAngleAxis 
+    <ChartShell title={title} description={description} height={320}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart data={data} cx="50%" cy="50%" outerRadius="72%">
+          <defs>
+            <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={stroke} stopOpacity={0.55} />
+              <stop offset="100%" stopColor={stroke} stopOpacity={0.08} />
+            </linearGradient>
+          </defs>
+          <PolarGrid stroke={theme.polarGrid} strokeDasharray="4 4" gridType="polygon" />
+          <PolarAngleAxis
             dataKey="name"
-            stroke={isDark ? '#9ca3af' : '#6b7280'}
-            style={{ fontSize: '12px' }}
+            tick={{ fill: theme.tick, fontSize: 11, fontWeight: 500 }}
           />
-          <PolarRadiusAxis 
-            stroke={isDark ? '#9ca3af' : '#6b7280'}
-            style={{ fontSize: '12px' }}
+          <PolarRadiusAxis
+            angle={90}
+            domain={[0, 100]}
+            tick={{ fill: theme.tooltipMuted, fontSize: 10 }}
+            axisLine={false}
+            tickCount={4}
           />
           <Radar
-            name={dataKey}
+            name="Indicateur"
             dataKey={dataKey}
             stroke={stroke}
-            fill={stroke}
-            fillOpacity={0.6}
-            isAnimationActive={true}
+            fill={`url(#${fillId})`}
+            strokeWidth={2}
+            dot={{ fill: stroke, r: 4, strokeWidth: 0 }}
+            isAnimationActive
           />
-          <Tooltip 
-            contentStyle={{
-              backgroundColor: isDark ? '#1e293b' : '#ffffff',
-              border: `1px solid ${isDark ? '#475569' : '#e5e7eb'}`,
-              borderRadius: '8px',
-              color: isDark ? '#f1f5f9' : '#1f2937'
-            }}
-          />
-          <Legend 
-            wrapperStyle={{ color: isDark ? '#9ca3af' : '#6b7280' }}
-          />
+          <Tooltip content={<ChartTooltip formatter={valueFormatter} />} />
         </RadarChart>
       </ResponsiveContainer>
-    </div>
+    </ChartShell>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Mail, Phone, Wrench } from 'lucide-react';
+import { Mail, Phone } from 'lucide-react';
+import { LOGO_BLACK, LOGO_WHITE } from '../../constants/appLogo';
 import './LandingPage.css';
 
 export default function LandingFooter() {
@@ -7,8 +8,14 @@ export default function LandingFooter() {
     <footer className="footer-section">
       <div className="footer-content footer-columns">
         <div className="footer-brand">
-          <Wrench className="footer-icon" />
-          <span>AutoPro</span>
+          <picture className="footer-logo-picture">
+            <source srcSet={LOGO_BLACK} media="(prefers-color-scheme: light)" />
+            <img
+              src={LOGO_WHITE}
+              alt="Mechanic"
+              className="app-logo-img app-logo-img--footer"
+            />
+          </picture>
         </div>
 
         <div className="footer-column">

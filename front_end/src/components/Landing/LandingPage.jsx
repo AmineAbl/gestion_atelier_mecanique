@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Wrench, ArrowRight, Gauge, TrendingUp, Lock, Star, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PerspectiveMarquee } from '../common/PerspectiveMarquee';
 import LandingFooter from './LandingFooter';
+import { getApiBaseUrl, getBackendOrigin } from '../../utils/backendUrl';
+import { LOGO_WHITE } from '../../constants/appLogo';
+import '../../styles/notabot-captcha.css';
 import './LandingPage.css';
 
 const AnimatedNumber = ({ end, duration = 2 }) => {
@@ -90,11 +93,9 @@ export default function LandingPage({ onGoToLogin }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [formStatus, setFormStatus] = useState('idle');
   const [formError, setFormError] = useState('');
-  const [captcha, setCaptcha] = useState(() => {
-    const a = Math.floor(Math.random() * 8) + 2;
-    const b = Math.floor(Math.random() * 8) + 2;
-    return { a, b, answer: a + b };
-  });
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaContainerRef = useRef(null);
+  const captchaInitialisedRef = useRef(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -104,6 +105,68 @@ export default function LandingPage({ onGoToLogin }) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const backendOrigin = getBackendOrigin();
+  const captchaAssetBase = `${backendOrigin}/captcha`;
+
+  useEffect(() => {
+    if (captchaInitialisedRef.current) return;
+
+    let cancelled = false;
+
+    const initWidget = () => {
+      if (cancelled || captchaInitialisedRef.current || !captchaContainerRef.current) return;
+      if (!window.CaptchaWidget) return;
+
+      captchaInitialisedRef.current = true;
+
+      window.CaptchaWidget.init({
+        container: '#notabot-captcha-root',
+        apiBase: backendOrigin,
+        assetBase: captchaAssetBase,
+        sceneId: 'scene_001_pets',
+        onSuccess: (token) => {
+          if (!cancelled) setCaptchaToken(token);
+        },
+      }).catch(() => {
+        captchaInitialisedRef.current = false;
+        setFormError('Impossible de charger la verification anti-robot.');
+        setFormStatus('error');
+      });
+    };
+
+    const onCaptchaReady = () => {
+      if (!cancelled) initWidget();
+    };
+
+    if (window.CaptchaWidget) {
+      onCaptchaReady();
+    } else {
+      window.addEventListener('CaptchaWidgetReady', onCaptchaReady, { once: true });
+
+      const script = document.createElement('script');
+      script.id = 'notabot-captcha-module';
+      script.type = 'module';
+      script.src = `${captchaAssetBase}/captcha-entry.js`;
+      script.onerror = () => {
+        if (!cancelled) {
+          setFormError('Impossible de charger la verification anti-robot.');
+          setFormStatus('error');
+        }
+      };
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      window.removeEventListener('CaptchaWidgetReady', onCaptchaReady);
+
+      cancelled = true;
+      captchaInitialisedRef.current = false;
+      if (window.CaptchaWidget) {
+        try { window.CaptchaWidget.destroy(); } catch (_) { /* ignore */ }
+      }
+    };
+  }, [backendOrigin, captchaAssetBase]);
 
   const features = [
     {
@@ -159,12 +222,11 @@ export default function LandingPage({ onGoToLogin }) {
     },
   ];
 
-  const handleContactSubmit = (event) => {
+  const handleContactSubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
     const trap = String(data.get('website') || '').trim();
-    const captchaValue = Number(data.get('captcha'));
 
     if (trap) {
       setFormStatus('error');
@@ -172,22 +234,55 @@ export default function LandingPage({ onGoToLogin }) {
       return;
     }
 
-    if (Number.isNaN(captchaValue) || captchaValue !== captcha.answer) {
+    if (!captchaToken) {
       setFormStatus('error');
-      setFormError('Verification incorrecte. Reessayez.');
-      const a = Math.floor(Math.random() * 8) + 2;
-      const b = Math.floor(Math.random() * 8) + 2;
-      setCaptcha({ a, b, answer: a + b });
+      setFormError('Veuillez completer la verification CAPTCHA avant d\'envoyer.');
       return;
     }
 
-    setFormStatus('sent');
+    setFormStatus('idle');
     setFormError('');
-    form.reset();
-    const a = Math.floor(Math.random() * 8) + 2;
-    const b = Math.floor(Math.random() * 8) + 2;
-    setCaptcha({ a, b, answer: a + b });
-    setTimeout(() => setFormStatus('idle'), 4000);
+
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/demo-requests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          full_name: String(data.get('fullName') || '').trim(),
+          email: String(data.get('email') || '').trim(),
+          phone: String(data.get('phone') || '').trim() || null,
+          workshop: String(data.get('workshop') || '').trim(),
+          plan: String(data.get('plan') || 'Standard'),
+          team_size: String(data.get('team') || '').trim(),
+          message: String(data.get('message') || '').trim() || null,
+          captcha_token: captchaToken,
+          website: trap,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setFormStatus('error');
+        setFormError(payload.message || 'Envoi impossible. Reessayez.');
+        return;
+      }
+
+      setFormStatus('sent');
+      setCaptchaToken(null);
+      captchaInitialisedRef.current = false;
+      form.reset();
+      if (window.CaptchaWidget) {
+        try { window.CaptchaWidget.destroy(); } catch (_) { /* ignore */ }
+      }
+      setTimeout(() => setFormStatus('idle'), 4000);
+    } catch {
+      setFormStatus('error');
+      setFormError('Serveur indisponible. Verifiez que l\'API Laravel est demarree.');
+    }
   };
 
   const scrollToContact = () => {
@@ -207,8 +302,11 @@ export default function LandingPage({ onGoToLogin }) {
       <header className={`floating-header ${isScrolled ? 'scrolled' : ''}`}>
         <nav className="nav-container">
           <div className="logo">
-            <Wrench className="logo-icon" />
-            <span className="logo-text">AutoPro</span>
+            <img
+              src={LOGO_WHITE}
+              alt="Mechanic"
+              className="app-logo-img app-logo-img--header"
+            />
           </div>
           <button type="button" onClick={onGoToLogin} className="login-button">
             Se connecter
@@ -271,14 +369,9 @@ export default function LandingPage({ onGoToLogin }) {
         <div className="marquee-overlay">
           <div className="marquee-label animate-fade-in">Trusted by leading automotive brands</div>
           <PerspectiveMarquee
-            items={['Bosch', 'Michelin', 'Continental', 'Castrol', 'Volkswagen', 'Renault', 'Peugeot', 'Audi', 'BMW', 'Mercedes']}
             fontSize={42}
-            color="rgba(255, 255, 255, 0.8)"
             background="transparent"
             fadeColor="transparent"
-            rotateY={-28}
-            rotateX={8}
-            perspective={1200}
             className="marquee-custom"
           />
         </div>
@@ -406,12 +499,16 @@ export default function LandingPage({ onGoToLogin }) {
                 placeholder="Expliquez votre contexte et vos attentes."
               />
             </div>
-            <div className="form-field">
-              <label htmlFor="captcha">Verification simple</label>
-              <div className="captcha-row">
-                <span className="captcha-label">Combien font {captcha.a} + {captcha.b} ?</span>
-                <input id="captcha" name="captcha" type="number" required />
-              </div>
+            <div className="form-field notabot-field">
+              <label className="notabot-captcha-label">Vérification anti-robot</label>
+              <div
+                id="notabot-captcha-root"
+                ref={captchaContainerRef}
+                className="notabot-captcha-wrapper"
+              />
+              {captchaToken && (
+                <p className="notabot-captcha-ok">✓ Vérification réussie</p>
+              )}
             </div>
             <div className="form-field">
               <label className="privacy-consent">
