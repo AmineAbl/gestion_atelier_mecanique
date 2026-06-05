@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="gestion_atelier_mecanique/mecanic.png" alt="MECINDIE" width="860" />
+  <img src="gestion_atelier_mecanique/front_end/logo_white.png" alt="MECINDIE" width="860" />
 </p>
 <h1 align="center">MECINDIE — Gestion d'Atelier Mécanique</h1>
  
