@@ -296,23 +296,14 @@ cd front_end && npm install
 ```
  
 ---
- 
-## Modèle de données
- 
-```
-clients ──< vehicules ──< reparations >──< reparation_pieces >── pieces
-                               │
-                           factures
-                               │
-                            users (mécanicien assigné)
-```
- 
----
+
  
 ## Équipe
  
 Projet réalisé dans le cadre d'un PFM (Projet de Fin de Module) — IRISI SIT1, 2026.  
-Localisation : Bd Abdelkrim Al Khattabi, Guéliz — Marrakech, Maroc.
+ETTABAA SOULAIMANE (putbullet)
+ALAOUI M'DAGHRI Yassine 
+ABOU-LAICHE AMINE
  
 ---
  
