@@ -6,7 +6,19 @@ import {
   User,
   Wrench,
   Settings,
+  TrendingUp,
+  Clock,
+  DollarSign,
+  Download,
 } from 'lucide-react';
+import {
+  PieChart,
+  Pie,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import { SimpleBarChart } from '../charts/SimpleBarChart';
 import {
   Alert,
   Button,
@@ -23,6 +35,7 @@ import { ThemeToggle } from '../common/ThemeToggle';
 import { CircularMenu } from '../common/CircularMenu';
 import { useTheme } from '../../context/ThemeContext';
 import { formatCurrency, formatDate, getRepairsOverview } from '../../utils/helpers';
+import { generateMechanicPersonalReportPDF } from '../../utils/pdfGenerator';
 import { useMechanicApi } from '../../hooks/useMechanicApi';
 import MechanicReparationModal from './MechanicReparationModal';
 
@@ -61,6 +74,95 @@ function tabClass(isActive, isDark) {
   }`;
 }
 
+// Helper functions for chart data
+function getStatusChartData(reparations) {
+  const statusCounts = {
+    'pending': 0,
+    'in-progress': 0,
+    'completed': 0,
+    'cancelled': 0,
+  };
+
+  reparations.forEach((r) => {
+    if (statusCounts.hasOwnProperty(r.statut)) {
+      statusCounts[r.statut]++;
+    }
+  });
+
+  return [
+    { name: 'En attente', value: statusCounts['pending'], color: '#F59E0B' },
+    { name: 'En cours', value: statusCounts['in-progress'], color: '#3B82F6' },
+    { name: 'Terminées', value: statusCounts['completed'], color: '#10B981' },
+    { name: 'Annulées', value: statusCounts['cancelled'], color: '#EF4444' },
+  ].filter((item) => item.value > 0);
+}
+
+function getCostBreakdownData(reparations) {
+  const costRanges = {
+    'Moins de 500': 0,
+    '500 - 1000': 0,
+    '1000 - 2000': 0,
+    '2000 - 5000': 0,
+    'Plus de 5000': 0,
+  };
+
+  reparations.forEach((r) => {
+    const cost = r.cout ?? 0;
+    if (cost < 500) costRanges['Moins de 500']++;
+    else if (cost < 1000) costRanges['500 - 1000']++;
+    else if (cost < 2000) costRanges['1000 - 2000']++;
+    else if (cost < 5000) costRanges['2000 - 5000']++;
+    else costRanges['Plus de 5000']++;
+  });
+
+  return Object.entries(costRanges).map(([name, value]) => ({ name, value }));
+}
+
+function getVehicleBrandData(reparations) {
+  const brandCounts = {};
+
+  reparations.forEach((r) => {
+    const brand = r.vehicule?.marque || 'Inconnu';
+    brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+  });
+
+  return Object.entries(brandCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8); // Top 8 brands
+}
+
+function getAverageRepairStats(reparations) {
+  if (reparations.length === 0) {
+    return { avgCost: 0, totalCost: 0, avgDuration: 0 };
+  }
+
+  const totalCost = reparations.reduce((sum, r) => sum + (r.cout ?? 0), 0);
+  const avgCost = totalCost / reparations.length;
+
+  // Calculate average duration for completed repairs
+  const completedReparations = reparations.filter(
+    (r) => r.statut === 'completed' && r.date_debut && r.date_fin
+  );
+
+  let avgDuration = 0;
+  if (completedReparations.length > 0) {
+    const totalDuration = completedReparations.reduce((sum, r) => {
+      const start = new Date(r.date_debut);
+      const end = new Date(r.date_fin);
+      return sum + (end - start) / (1000 * 60 * 60 * 24); // in days
+    }, 0);
+    avgDuration = Math.round(totalDuration / completedReparations.length);
+  }
+
+  return {
+    avgCost: Math.round(avgCost),
+    totalCost: Math.round(totalCost),
+    avgDuration,
+    completed: completedReparations.length,
+  };
+}
+
 export default function MechanicDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -70,6 +172,23 @@ export default function MechanicDashboard({ user, onLogout }) {
   const { reparations, pieces, loading, error, clearError, refresh } = useMechanicApi(user);
 
   const overview = useMemo(() => getRepairsOverview(reparations), [reparations]);
+  const statusChartData = useMemo(() => getStatusChartData(reparations), [reparations]);
+  const costBreakdownData = useMemo(() => getCostBreakdownData(reparations), [reparations]);
+  const vehicleBrandData = useMemo(() => getVehicleBrandData(reparations), [reparations]);
+  const repairStats = useMemo(() => getAverageRepairStats(reparations), [reparations]);
+  const accountStats = useMemo(() => ({
+    total: reparations.length,
+    completed: reparations.filter((r) => r.statut === 'completed').length,
+    inProgress: reparations.filter((r) => r.statut === 'in-progress').length,
+    pending: reparations.filter((r) => r.statut === 'pending').length,
+    recent: [...reparations]
+      .sort((a, b) => new Date(b.date_debut || b.created_at || 0) - new Date(a.date_debut || a.created_at || 0))
+      .slice(0, 4),
+  }), [reparations]);
+
+  const handleDownloadPersonalReport = () => {
+    if (user) generateMechanicPersonalReportPDF(user, reparations);
+  };
 
   const filteredReparations = useMemo(() => {
     const f = statusFilter || 'all';
@@ -261,26 +380,186 @@ export default function MechanicDashboard({ user, onLogout }) {
           )}
 
           {activeTab === 'overview' && (
-            <Card
-              className={`border shadow-xl ${
-                isDark ? 'bg-slate-800/90 border-white/10 text-gray-100' : 'bg-white border-gray-200 text-gray-900'
-              }`}
-            >
-              <h2
-                className={`text-xl font-bold mb-4 pb-3 border-b ${
-                  isDark ? 'text-white border-white/15' : 'text-gray-900 border-gray-300'
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <Card
+                className={`border ${
+                  isDark ? 'bg-slate-800/90 border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'
                 }`}
               >
-                Synthèse
-              </h2>
-              <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-4`}>
-                Taux de réparations terminées sur l’ensemble de vos ordres :{' '}
-                <span className="font-bold text-amber-400">{overview.completionRate}%</span>
-              </p>
-              <Button type="button" onClick={() => setActiveTab('reparations')}>
-                Ouvrir mes réparations
-              </Button>
-            </Card>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p
+                      className={`text-xs font-medium ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      } uppercase tracking-wide`}
+                    >
+                      Coût moyen
+                    </p>
+                    <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {formatCurrency(repairStats.avgCost)}
+                    </p>
+                  </div>
+                  <DollarSign className="w-10 h-10 text-green-400/80" />
+                </div>
+              </Card>
+              <Card
+                className={`border ${
+                  isDark ? 'bg-slate-800/90 border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p
+                      className={`text-xs font-medium ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      } uppercase tracking-wide`}
+                    >
+                      Coût total
+                    </p>
+                    <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {formatCurrency(repairStats.totalCost)}
+                    </p>
+                  </div>
+                  <TrendingUp className="w-10 h-10 text-blue-400/80" />
+                </div>
+              </Card>
+              <Card
+                className={`border ${
+                  isDark ? 'bg-slate-800/90 border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p
+                      className={`text-xs font-medium ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      } uppercase tracking-wide`}
+                    >
+                      Durée moy.
+                    </p>
+                    <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {repairStats.avgDuration} j
+                    </p>
+                  </div>
+                  <Clock className="w-10 h-10 text-purple-400/80" />
+                </div>
+              </Card>
+              <Card
+                className={`border ${
+                  isDark ? 'bg-slate-800/90 border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p
+                      className={`text-xs font-medium ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      } uppercase tracking-wide`}
+                    >
+                      Réparées
+                    </p>
+                    <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {repairStats.completed}
+                    </p>
+                  </div>
+                  <Wrench className="w-10 h-10 text-amber-400/80" />
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Status Distribution Pie Chart */}
+              <Card
+                className={`border shadow-xl ${
+                  isDark ? 'bg-slate-800/90 border-white/10 text-gray-100' : 'bg-white border-gray-200 text-gray-900'
+                }`}
+              >
+                <h2
+                  className={`text-lg font-bold mb-4 pb-3 border-b ${
+                    isDark ? 'text-white border-white/15' : 'text-gray-900 border-gray-300'
+                  }`}
+                >
+                  Distribution par statut
+                </h2>
+                {statusChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={statusChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: ${value}`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {statusChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                          border: isDark ? '1px solid #475569' : '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          color: isDark ? '#e2e8f0' : '#1e293b',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Aucune réparation pour afficher le graphique
+                  </p>
+                )}
+              </Card>
+
+              {/* Cost Breakdown Bar Chart */}
+              <SimpleBarChart
+                data={costBreakdownData}
+                title="Répartition des coûts"
+                description="Répartition des réparations par fourchette de coût"
+                dataKey="value"
+              />
+            </div>
+          )}
+
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-2">
+                <SimpleBarChart
+                  data={vehicleBrandData}
+                  title="Véhicules réparés par marque (top 8)"
+                  description="Top marques des véhicules réparés"
+                  dataKey="value"
+                />
+              </div>
+              <div className="lg:col-span-1">
+                <Card
+                  className={`border shadow-xl h-full ${
+                    isDark ? 'bg-slate-800/90 border-white/10 text-gray-100' : 'bg-white border-gray-200 text-gray-900'
+                  }`}
+                >
+                  <h2
+                    className={`text-xl font-bold mb-4 pb-3 border-b ${
+                      isDark ? 'text-white border-white/15' : 'text-gray-900 border-gray-300'
+                    }`}
+                  >
+                    Synthèse
+                  </h2>
+                  <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-4`}>
+                    Taux de réparations terminées sur l’ensemble de vos ordres :{' '}
+                    <span className="font-bold text-amber-400">{overview.completionRate}%</span>
+                  </p>
+                  <Button type="button" onClick={() => setActiveTab('reparations')}>
+                    Ouvrir mes réparations
+                  </Button>
+                </Card>
+              </div>
+            </div>
           )}
 
           {activeTab === 'reparations' && (
@@ -407,37 +686,109 @@ export default function MechanicDashboard({ user, onLogout }) {
           )}
 
           {activeTab === 'account' && (
-            <Card
-              className={`border shadow-xl ${
-                isDark ? 'bg-slate-800/90 border-white/10 text-gray-100' : 'bg-white border-gray-200 text-gray-900'
-              }`}
-            >
-              <h2
-                className={`text-xl font-bold mb-4 pb-3 border-b ${
-                  isDark ? 'text-white border-white/15' : 'text-gray-900 border-gray-300'
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <Card
+                className={`border shadow-xl ${
+                  isDark ? 'bg-slate-800/90 border-white/10 text-gray-100' : 'bg-white border-gray-200 text-gray-900'
                 }`}
               >
-                Mon compte
-              </h2>
-              <dl className={`space-y-2 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                <div>
-                  <dt className="font-semibold text-xs uppercase opacity-80">Nom affiché</dt>
-                  <dd>{user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim() || '—'}</dd>
+                <div className="mb-6">
+                  <h2
+                    className={`text-xl font-bold mb-4 pb-3 border-b ${
+                      isDark ? 'text-white border-white/15' : 'text-gray-900 border-gray-300'
+                    }`}
+                  >
+                    Mon compte
+                  </h2>
+                  <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-4`}>
+                    Vos informations de profil et le résumé de vos interventions pour l’atelier.
+                  </p>
+                </div>
+                <dl className={`grid grid-cols-1 gap-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <div className={`rounded-2xl p-4 border ${isDark ? 'border-white/10 bg-slate-900/70' : 'border-gray-200 bg-slate-50'}`}>
+                    <dt className="font-semibold text-xs uppercase opacity-80">Nom affiché</dt>
+                    <dd className="mt-1 font-medium text-base text-current">
+                      {user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim() || '—'}
+                    </dd>
+                  </div>
+                  <div className={`rounded-2xl p-4 border ${isDark ? 'border-white/10 bg-slate-900/70' : 'border-gray-200 bg-slate-50'}`}>
+                    <dt className="font-semibold text-xs uppercase opacity-80">Email</dt>
+                    <dd className="mt-1 font-medium text-base text-current">{user?.email || '—'}</dd>
+                  </div>
+                  <div className={`rounded-2xl p-4 border ${isDark ? 'border-white/10 bg-slate-900/70' : 'border-gray-200 bg-slate-50'}`}>
+                    <dt className="font-semibold text-xs uppercase opacity-80">CIN</dt>
+                    <dd className="mt-1 font-medium text-base text-current">{user?.cin || '—'}</dd>
+                  </div>
+                  <div className={`rounded-2xl p-4 border ${isDark ? 'border-white/10 bg-slate-900/70' : 'border-gray-200 bg-slate-50'}`}>
+                    <dt className="font-semibold text-xs uppercase opacity-80">Rôle</dt>
+                    <dd className="mt-1 font-medium text-base text-current">Mécanicien</dd>
+                  </div>
+                </dl>
+                <div className="mt-6">
+                  <Button variant="primary" size="lg" onClick={handleDownloadPersonalReport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Télécharger mon rapport
+                  </Button>
+                </div>
+              </Card>
+
+              <Card
+                className={`border shadow-xl ${
+                  isDark ? 'bg-slate-800/90 border-white/10 text-gray-100' : 'bg-white border-gray-200 text-gray-900'
+                }`}
+              >
+                <h2
+                  className={`text-xl font-bold mb-4 pb-3 border-b ${
+                    isDark ? 'text-white border-white/15' : 'text-gray-900 border-gray-300'
+                  }`}
+                >
+                  Résumé des interventions
+                </h2>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  {[
+                    { label: 'Total', value: accountStats.total },
+                    { label: 'Terminées', value: accountStats.completed },
+                    { label: 'En cours', value: accountStats.inProgress },
+                    { label: 'En attente', value: accountStats.pending },
+                  ].map((stat) => (
+                    <div
+                      key={stat.label}
+                      className={`rounded-2xl p-4 ${isDark ? 'bg-slate-900/70' : 'bg-slate-50'} border ${isDark ? 'border-white/10' : 'border-gray-200'}`}
+                    >
+                      <p className="text-xs uppercase opacity-70">{stat.label}</p>
+                      <p className="mt-2 text-2xl font-bold">{stat.value}</p>
+                    </div>
+                  ))}
                 </div>
                 <div>
-                  <dt className="font-semibold text-xs uppercase opacity-80">Email</dt>
-                  <dd>{user?.email || '—'}</dd>
+                  <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Interventions récentes
+                  </h3>
+                  {accountStats.recent.length === 0 ? (
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Aucun historique d’intervention disponible.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {accountStats.recent.map((rep) => (
+                        <li
+                          key={rep.id}
+                          className={`rounded-2xl p-4 border ${isDark ? 'border-white/10 bg-slate-900/70' : 'border-gray-200 bg-slate-50'}`}
+                        >
+                          <p className="text-sm font-semibold">
+                            {vehiculeMarqueModele(rep)} • {vehiculeImmat(rep)}
+                          </p>
+                          <p className="text-xs uppercase mt-1 text-amber-400">{rep.statut || '—'}</p>
+                          <p className={`text-sm mt-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                            {rep.description ? `${rep.description.slice(0, 80)}${rep.description.length > 80 ? '…' : ''}` : 'Aucune description'}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <div>
-                  <dt className="font-semibold text-xs uppercase opacity-80">CIN</dt>
-                  <dd>{user?.cin || '—'}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-xs uppercase opacity-80">Rôle</dt>
-                  <dd>Mécanicien</dd>
-                </div>
-              </dl>
-            </Card>
+              </Card>
+            </div>
           )}
         </div>
       </div>

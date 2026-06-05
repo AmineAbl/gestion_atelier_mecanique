@@ -313,3 +313,140 @@ export const generateInvoicePDF = async (facture, client, reparation, vehicule, 
   }
 };
 
+export const generateMechanicPersonalReportPDF = (user, reparations = []) => {
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let y = 18;
+
+  const primaryColor = [51, 65, 85];
+  const softGray = [241, 245, 249];
+
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, pageWidth, 28, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('Helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text('Rapport personnel mécanicien', pageWidth / 2, 16, { align: 'center' });
+
+  doc.setFont('Helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`Généré le : ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 24, { align: 'center' });
+
+  y += 14;
+  doc.setTextColor(...primaryColor);
+  doc.setFontSize(12);
+  doc.setFont('Helvetica', 'bold');
+  doc.text('Informations personnelles', 15, y);
+  y += 8;
+
+  doc.setFont('Helvetica', 'normal');
+  doc.setFontSize(10);
+  const fullName = user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim() || '—';
+  const email = user?.email || '—';
+  const cin = user?.cin || '—';
+  const role = 'Mécanicien';
+
+  const fields = [
+    ['Nom', fullName],
+    ['Email', email],
+    ['CIN', cin],
+    ['Rôle', role],
+  ];
+
+  fields.forEach(([label, value]) => {
+    doc.setTextColor(...primaryColor);
+    doc.setFont('Helvetica', 'bold');
+    doc.text(`${label}:`, 15, y);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(value, 52, y);
+    y += 7;
+  });
+
+  y += 6;
+  doc.setFont('Helvetica', 'bold');
+  doc.text('Résumé des interventions', 15, y);
+  y += 8;
+
+  const stats = {
+    total: reparations.length,
+    completed: reparations.filter((r) => r.statut === 'completed').length,
+    inProgress: reparations.filter((r) => r.statut === 'in-progress').length,
+    pending: reparations.filter((r) => r.statut === 'pending').length,
+  };
+
+  const summaryEntries = [
+    ['Total', stats.total],
+    ['Terminées', stats.completed],
+    ['En cours', stats.inProgress],
+    ['En attente', stats.pending],
+  ];
+
+  const summaryX = 15;
+  const summaryWidth = (pageWidth - 30) / 2;
+  doc.setFontSize(10);
+  summaryEntries.forEach((entry, index) => {
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    const boxX = summaryX + col * summaryWidth;
+    const boxY = y + row * 18;
+    doc.setFillColor(...softGray);
+    doc.roundedRect(boxX, boxY, summaryWidth - 8, 15, 4, 4, 'F');
+    doc.setTextColor(...primaryColor);
+    doc.setFont('Helvetica', 'bold');
+    doc.text(String(entry[1]), boxX + 4, boxY + 6);
+    doc.setFont('Helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(entry[0], boxX + 4, boxY + 12);
+  });
+
+  y += 40;
+  if (y + 70 > pageHeight - 20) {
+    doc.addPage();
+    y = 20;
+  }
+
+  doc.setFont('Helvetica', 'bold');
+  doc.text('Interventions récentes', 15, y);
+  y += 8;
+  doc.setFont('Helvetica', 'normal');
+  doc.setFontSize(9);
+
+  const recent = [...reparations]
+    .sort((a, b) => new Date(b.date_debut || b.created_at || 0) - new Date(a.date_debut || a.created_at || 0))
+    .slice(0, 6);
+
+  if (recent.length === 0) {
+    doc.text('Aucune intervention enregistrée.', 15, y);
+  } else {
+    recent.forEach((rep) => {
+      if (y + 30 > pageHeight - 20) {
+        doc.addPage();
+        y = 20;
+      }
+      const vehicle = rep.vehicule ? `${rep.vehicule.marque || 'Véhicule'} ${rep.vehicule.modele || ''}`.trim() : 'Véhicule inconnu';
+      const immat = rep.vehicule ? (rep.vehicule.immat || rep.vehicule.immatriculation || '—') : '—';
+      const date = rep.date_debut ? new Date(rep.date_debut).toLocaleDateString('fr-FR') : 'Date indisponible';
+      const status = rep.statut || '—';
+      const cost = rep.cout != null ? `${rep.cout} MAD` : '—';
+
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(15, y - 6, pageWidth - 30, 22, 4, 4, 'F');
+      doc.setTextColor(...primaryColor);
+      doc.setFont('Helvetica', 'bold');
+      doc.text(vehicle, 18, y);
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`Immatriculation: ${immat} • Statut: ${status}`, 18, y + 5);
+      doc.text(`Début: ${date} • Coût: ${cost}`, 18, y + 10);
+      const description = rep.description ? rep.description.slice(0, 80) : 'Pas de description';
+      doc.setTextColor(71, 85, 105);
+      doc.text(description, 18, y + 15);
+      y += 30;
+    });
+  }
+
+  doc.save(`rapport_personnel_${(user?.email || 'mecanicien').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+};
+

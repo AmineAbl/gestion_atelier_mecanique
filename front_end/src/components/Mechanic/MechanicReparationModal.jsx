@@ -6,6 +6,7 @@ import {
   Modal,
   Select,
   Spinner,
+  StatusBadge,
 } from '../common/UIComponents';
 import { useTheme } from '../../context/ThemeContext';
 import { reparationsAPI } from '../../services/api';
@@ -57,6 +58,23 @@ function usedPieceIdsFromLines(lines) {
   );
 }
 
+function repairVehiculeId(repair) {
+  if (!repair) return null;
+  return repair.vehicule_id ?? repair.vehiculeId ?? repair.vehicule?.id ?? null;
+}
+
+function sortRepairsNewestFirst(list) {
+  return [...list].sort((a, b) => {
+    const da = new Date(a.date_fin || a.date_debut || a.created_at || 0).getTime();
+    const db = new Date(b.date_fin || b.date_debut || b.created_at || 0).getTime();
+    return db - da;
+  });
+}
+
+function historyDisplayDate(repair) {
+  return repair.date_fin || repair.date_debut || repair.created_at;
+}
+
 export default function MechanicReparationModal({
   isOpen,
   onClose,
@@ -78,6 +96,9 @@ export default function MechanicReparationModal({
   const [lines, setLines] = useState([]);
   const [piecePickerOpen, setPiecePickerOpen] = useState(false);
   const [pickerSelectedId, setPickerSelectedId] = useState('');
+  const [vehicleHistory, setVehicleHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
 
   const catalog = useMemo(
     () => (Array.isArray(piecesCatalog) ? piecesCatalog : []),
@@ -121,13 +142,40 @@ export default function MechanicReparationModal({
     setLines([]);
     setPiecePickerOpen(false);
     setPickerSelectedId('');
+    setVehicleHistory([]);
+    setHistoryLoading(false);
+    setHistoryError(null);
     setLoadError(null);
     setSaveError(null);
+  }, []);
+
+  const loadVehicleHistory = useCallback(async (repairData) => {
+    const vid = repairVehiculeId(repairData);
+    if (!vid) {
+      setVehicleHistory([]);
+      setHistoryError(null);
+      return;
+    }
+    setHistoryError(null);
+    setHistoryLoading(true);
+    try {
+      const all = await reparationsAPI.getByVehicle(vid);
+      const list = (Array.isArray(all) ? all : [])
+        .filter((r) => String(r.id) !== String(repairData.id));
+      setVehicleHistory(sortRepairsNewestFirst(list));
+    } catch (e) {
+      setVehicleHistory([]);
+      setHistoryError(e.message || 'Impossible de charger l’historique véhicule');
+    } finally {
+      setHistoryLoading(false);
+    }
   }, []);
 
   const loadRepair = useCallback(async () => {
     if (!reparationId) return;
     setLoadError(null);
+    setVehicleHistory([]);
+    setHistoryError(null);
     setLoading(true);
     try {
       const data = await reparationsAPI.getById(reparationId);
@@ -140,13 +188,15 @@ export default function MechanicReparationModal({
       setDateFin(dateInputValue(data.date_fin));
       setDatePrevueFin(dateInputValue(data.date_prevue_fin));
       setLines(loadedLines);
+      await loadVehicleHistory(data);
     } catch (e) {
       setLoadError(e.message || 'Impossible de charger la réparation');
       setRepair(null);
+      setVehicleHistory([]);
     } finally {
       setLoading(false);
     }
-  }, [reparationId]);
+  }, [reparationId, loadVehicleHistory]);
 
   useEffect(() => {
     if (isOpen && reparationId) {
@@ -296,6 +346,65 @@ export default function MechanicReparationModal({
             <p className={`mt-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               Réparation #{repair.id} · créée le {formatDate(repair.created_at)}
             </p>
+          </div>
+
+          <div
+            className={`rounded-xl border p-4 ${
+              isDark ? 'border-white/10 bg-slate-800/40' : 'border-gray-200 bg-gray-50'
+            }`}
+          >
+            <p className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Historique véhicule
+            </p>
+            {historyLoading && (
+              <div className="flex items-center gap-2 py-2">
+                <Spinner />
+                <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Chargement des réparations passées…
+                </span>
+              </div>
+            )}
+            {!historyLoading && historyError && (
+              <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-600'}`}>{historyError}</p>
+            )}
+            {!historyLoading && !historyError && !repairVehiculeId(repair) && (
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Aucun véhicule lié à cette réparation.
+              </p>
+            )}
+            {!historyLoading && !historyError && repairVehiculeId(repair) && vehicleHistory.length === 0 && (
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Première réparation enregistrée pour ce véhicule.
+              </p>
+            )}
+            {!historyLoading && vehicleHistory.length > 0 && (
+              <ul className="space-y-2 max-h-48 overflow-y-auto">
+                {vehicleHistory.map((past) => (
+                  <li
+                    key={past.id}
+                    className={`rounded-lg border px-3 py-2 text-sm ${
+                      isDark ? 'border-white/10 bg-slate-900/50' : 'border-gray-200 bg-white'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>
+                        #{past.id} · {formatDate(historyDisplayDate(past))}
+                      </span>
+                      <StatusBadge status={past.statut} />
+                    </div>
+                    <p className={`mt-1 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {past.description || '—'}
+                    </p>
+                    <p className={`mt-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Coût {formatCurrency(past.cout ?? 0)}
+                      {past.mecanicien
+                        ? ` · ${[past.mecanicien.prenom, past.mecanicien.nom].filter(Boolean).join(' ')}`
+                        : ''}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div>
