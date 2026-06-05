@@ -87,13 +87,14 @@ export default function AccountantDashboard({ user, onLogout }) {
   }, [factures.factures]);
 
   const repairsLineChartData = useMemo(() => {
-    const months = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun'];
-    return months.map((month, idx) => ({
-      month,
-      completed: Math.floor(Math.random() * repairsOverview.completed + 2),
-      pending: Math.floor(Math.random() * repairsOverview.pending + 1),
-    }));
-  }, [repairsOverview]);
+  const months = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun'];
+  const base = repairsOverview.completed || 1;
+  return months.map((month, idx) => ({
+    month,
+    completed: Math.max(1, Math.floor(base * (0.5 + idx * 0.12))),
+    pending:   Math.max(0, Math.floor((repairsOverview.pending || 1) * (1 - idx * 0.1))),
+  }));
+}, [repairsOverview]);
 
   const repairsBarChartData = useMemo(
     () => [
@@ -112,6 +113,23 @@ export default function AccountantDashboard({ user, onLogout }) {
     { name: 'Bénéfice', value: Math.min(100, (financialMetrics.totalProfit / 10000) * 100) },
     { name: 'Marge', value: financialMetrics.profitMargin },
   ], [financialMetrics]);
+  const topClientsData = useMemo(() => {
+  return clients.clients
+    .map((client) => {
+      const clientInvoices = factures.factures.filter(f => f.client_id === client.id);
+      const total = clientInvoices
+        .filter(f => f.statut === 'paid')
+        .reduce((sum, f) => sum + parseFloat(f.montant_total || 0), 0);
+      return {
+        name: `${client.prenom || ''} ${client.nom || ''}`.trim() || client.email,
+        value: total,
+        invoices: clientInvoices.length,
+      };
+    })
+    .filter(c => c.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+}, [clients.clients, factures.factures]);
 
   const menuItems = [
     { icon: BarChart3, label: 'Apercu', action: 'overview' },
@@ -266,7 +284,42 @@ export default function AccountantDashboard({ user, onLogout }) {
                   color={financialMetrics.totalProfit >= 0 ? 'green' : 'red'}
                 />
               </div>
-
+              {topClientsData.length > 0 && (
+  <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900/50 border-white/10' : 'bg-white border-gray-200'}`}>
+    <h3 className={`text-xl font-bold mb-6 pb-4 border-b-2 ${isDark ? 'text-white border-white/20' : 'text-gray-900 border-gray-200'}`}>
+      🏆 Meilleurs Clients
+    </h3>
+    <div className="space-y-4">
+      {topClientsData.map((client, idx) => (
+        <div key={idx} className="flex items-center gap-4">
+          <span className={`text-lg font-bold w-6 ${idx === 0 ? 'text-amber-400' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-orange-600' : isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            #{idx + 1}
+          </span>
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${isDark ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
+            {client.name.charAt(0).toUpperCase()}
+          </div>
+          <span className={`flex-1 font-medium text-sm truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+            {client.name}
+          </span>
+          <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            {client.invoices} facture{client.invoices > 1 ? 's' : ''}
+          </span>
+          <div className="w-32 hidden sm:block">
+            <div className={`h-2 rounded ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
+              <div
+                className="h-2 rounded bg-blue-500 transition-all"
+                style={{ width: `${(client.value / topClientsData[0].value) * 100}%` }}
+              />
+            </div>
+          </div>
+          <span className={`text-sm font-bold w-28 text-right ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+            {formatCurrency(client.value)}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
               <div className="my-8">
                 <FinancialChart
                   title="Resume financier"

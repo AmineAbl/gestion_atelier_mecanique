@@ -291,6 +291,7 @@ function FunnelInner({ data }) {
                     staggerDelay={staggerDelay}
                     straight={false}
                   />
+                  <div className="absolute inset-0" style={{ zIndex: 20, pointerEvents: 'none' }}>
                   <SegmentLabel
                     index={i}
                     isDark={isDark}
@@ -302,6 +303,7 @@ function FunnelInner({ data }) {
                     staggerDelay={staggerDelay}
                     theme={theme}
                   />
+                </div>
                 </div>
               );
             })}

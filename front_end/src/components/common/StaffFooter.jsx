@@ -114,10 +114,15 @@ export function StaffFooter({ role, onNavigate }) {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <div className={`${isDark ? 'text-white' : 'text-black'}`}>
-            <h3 className="text-2xl font-bold mb-2">AutoPro</h3>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              {config.title}
-            </p>
+            <img
+    src={isDark ? '/logo_white.png' : '/logo_app_black.png'}
+    alt="Mecindie"
+    style={{ height: '40px', width: 'auto', objectFit: 'contain', marginBottom: '8px' }}
+  />
+  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+    {config.title}
+  </p>
+            
           </div>
 
           <div>
@@ -186,7 +191,7 @@ export function StaffFooter({ role, onNavigate }) {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            © 2026 AutoPro Management. Tous les droits reserves.
+            © 2026 MECINDIE Management. Tous les droits reserves.
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />

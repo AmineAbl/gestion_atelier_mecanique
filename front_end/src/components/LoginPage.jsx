@@ -48,17 +48,18 @@ export default function LoginPage({ onLoginSuccess, onBackToHome }) {
           Retour à l’accueil
         </button>
 
-        <div className={`${styles.header} ${isDark ? styles.headerDark : ''}`}>
-          <div className={styles.logo}>
-            <div className={`${styles.logoIcon} ${isDark ? styles.logoIconDark : ''}`}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 1 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-              </svg>
-            </div>
-            <h1 className={`${styles.title} ${isDark ? styles.titleDark : ''}`}>MecanicHub</h1>
-          </div>
-          <p className={`${styles.subtitle} ${isDark ? styles.subtitleDark : ''}`}>Connexion — accès à votre espace</p>
-        </div>
+        <div className={styles.header} className={`${styles.header} ${isDark ? styles.headerDark : ''}`}>
+  <div className={styles.logo}>
+    <img
+      src="/logo_white.png"
+      alt="Mecindie logo"
+      className={`${styles.logoIcon} ${isDark ? styles.logoIconDark : ''}`}
+      style={{ height: '48px', width: 'auto', objectFit: 'contain' }}
+    />
+    
+  </div>
+  <p className={`${styles.subtitle} ${isDark ? styles.subtitleDark : ''}`}>Connexion — accès à votre espace</p>
+</div>
 
         <motion.div
           className={`${styles.card} ${isDark ? styles.cardDark : ''}`}
@@ -144,18 +145,18 @@ export default function LoginPage({ onLoginSuccess, onBackToHome }) {
               )}
             </button>
 
-            <div className={`${styles.hintBox} ${isDark ? styles.hintBoxDark : ''}`}>
+            {/*<div className={`${styles.hintBox} ${isDark ? styles.hintBoxDark : ''}`}>
               <p className={`${styles.hintTitle} ${isDark ? styles.hintTitleDark : ''}`}>Comptes de démonstration</p>
               <ul className={`${styles.hintList} ${isDark ? styles.hintListDark : ''}`}>
-                <li><strong>Responsable</strong> (un seul compte) : responsable@atelier.com / password123</li>
+                {/* <li><strong>Responsable</strong> (un seul compte) : responsable@atelier.com / password123</li> 
                 <li><strong>Comptable</strong> : comptable@atelier.com / password123</li>
                 <li><strong>Mécanicien</strong> : mecanicien@atelier.com / password123 (Laravel doit être démarré pour charger les ordres)</li>
               </ul>
-            </div>
+            </div>*/}
           </form>
         </motion.div>
 
-        <p className={`${styles.footer} ${isDark ? styles.footerDark : ''}`}>© 2026 MecanicHub. Tous droits réservés.</p>
+        <p className={`${styles.footer} ${isDark ? styles.footerDark : ''}`}>© 2026 MECINDIE. Tous droits réservés.</p>
       </div>
     </div>
   );

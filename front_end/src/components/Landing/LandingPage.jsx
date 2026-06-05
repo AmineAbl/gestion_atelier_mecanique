@@ -7,6 +7,7 @@ import { getApiBaseUrl, getBackendOrigin } from '../../utils/backendUrl';
 import { LOGO_WHITE } from '../../constants/appLogo';
 import '../../styles/notabot-captcha.css';
 import './LandingPage.css';
+import emailjs from '@emailjs/browser';
 
 const AnimatedNumber = ({ end, duration = 2 }) => {
   const [count, setCount] = useState(0);
@@ -192,99 +193,95 @@ export default function LandingPage({ onGoToLogin }) {
   ];
 
   const pricingTiers = [
-    {
-      name: 'Standard',
-      price: 299,
-      badge: 'Essentiel',
-      description: 'Pour les ateliers qui veulent un flux propre et fiable.',
-      highlight: false,
-      features: [
-        'Gestion reparations + pieces',
-        'Factures et clients illimites',
-        'Planning simple des techniciens',
-        'Support email standard',
-      ],
-      icon: Star,
-    },
-    {
-      name: 'Pro',
-      price: 599,
-      badge: 'Recommande',
-      description: 'Pour les equipes qui veulent des rapports et alertes avancees.',
-      highlight: true,
-      features: [
-        'Tableaux financiers avancees',
-        'Alertes statut et paiement',
-        'Acces multi-roles optimise',
-        'Support prioritaire',
-      ],
-      icon: Sparkles,
-    },
-  ];
+  {
+    name: 'Standard',
+    price: 299,
+    oldPrice: 399,
+    badge: 'Essentiel',
+    savings: 'Économisez 25%',
+    description: 'Pour les ateliers qui veulent un flux propre et fiable.',
+    highlight: false,
+    features: [
+      'Gestion reparations + pieces',
+      'Factures et clients illimites',
+      'Planning simple des techniciens',
+      'Support email standard',
+    ],
+    icon: Star,
+  },
+  {
+    name: 'Pro',
+    price: 599,
+    oldPrice: 849,
+    badge: 'Recommandé',
+    savings: 'Économisez 29%',
+    description: 'Pour les equipes qui veulent des rapports et alertes avancees.',
+    highlight: true,
+    features: [
+      'Tableaux financiers avancées',
+      'Alertes statut et paiement',
+      'Accès multi-rôles optimisé',
+      'Support prioritaire',
+    ],
+    icon: Sparkles,
+  },
+];
+
+  
 
   const handleContactSubmit = async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const trap = String(data.get('website') || '').trim();
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = new FormData(form);
+  const trap = String(data.get('website') || '').trim();
 
-    if (trap) {
-      setFormStatus('error');
-      setFormError('Requete bloquee. Veuillez reessayer.');
-      return;
+  if (trap) {
+    setFormStatus('error');
+    setFormError('Requete bloquee. Veuillez reessayer.');
+    return;
+  }
+
+  if (!captchaToken) {
+    setFormStatus('error');
+    setFormError('Veuillez completer la verification CAPTCHA avant d\'envoyer.');
+    return;
+  }
+
+  setFormStatus('idle');
+  setFormError('');
+
+  try {
+    await emailjs.send(
+      'service_ne6p5gm',       // Service ID
+      'template_wgd8qwb',      // Template ID here
+      {
+        full_name: String(data.get('fullName') || '').trim(),
+        email:     String(data.get('email') || '').trim(),
+        phone:     String(data.get('phone') || '').trim() || 'Non renseigné',
+        workshop:  String(data.get('workshop') || '').trim(),
+        plan:      String(data.get('plan') || 'Standard'),
+        team:      String(data.get('team') || '').trim(),
+        message:   String(data.get('message') || '').trim() || 'Aucun message',
+      },
+      'AqLJ19vLFyQOEJ6EU'        
+    );
+
+    setFormStatus('sent');
+    setCaptchaToken(null);
+    captchaInitialisedRef.current = false;
+    form.reset();
+    if (window.CaptchaWidget) {
+      try { window.CaptchaWidget.destroy(); } catch (_) { /* ignore */ }
     }
+    setTimeout(() => setFormStatus('idle'), 4000);
 
-    if (!captchaToken) {
-      setFormStatus('error');
-      setFormError('Veuillez completer la verification CAPTCHA avant d\'envoyer.');
-      return;
-    }
-
-    setFormStatus('idle');
-    setFormError('');
-
-    try {
-      const response = await fetch(`${getApiBaseUrl()}/demo-requests`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          full_name: String(data.get('fullName') || '').trim(),
-          email: String(data.get('email') || '').trim(),
-          phone: String(data.get('phone') || '').trim() || null,
-          workshop: String(data.get('workshop') || '').trim(),
-          plan: String(data.get('plan') || 'Standard'),
-          team_size: String(data.get('team') || '').trim(),
-          message: String(data.get('message') || '').trim() || null,
-          captcha_token: captchaToken,
-          website: trap,
-        }),
-      });
-
-      const payload = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        setFormStatus('error');
-        setFormError(payload.message || 'Envoi impossible. Reessayez.');
-        return;
-      }
-
-      setFormStatus('sent');
-      setCaptchaToken(null);
-      captchaInitialisedRef.current = false;
-      form.reset();
-      if (window.CaptchaWidget) {
-        try { window.CaptchaWidget.destroy(); } catch (_) { /* ignore */ }
-      }
-      setTimeout(() => setFormStatus('idle'), 4000);
-    } catch {
-      setFormStatus('error');
-      setFormError('Serveur indisponible. Verifiez que l\'API Laravel est demarree.');
-    }
-  };
-
+  } catch (err) {
+    console.error(err);
+    setFormStatus('error');
+    setFormError('Envoi impossible. Verifiez votre connexion et reessayez.');
+  }
+};
+  
   const scrollToContact = () => {
     const section = document.getElementById('contact');
     if (section) {
@@ -338,7 +335,7 @@ export default function LandingPage({ onGoToLogin }) {
       {/* Features Section */}
       <section className="features-section" id="features">
         <div className="features-header animate-fade-in">
-          <h2 className="features-title">Pourquoi choisir AutoPro ?</h2>
+          <h2 className="features-title">Pourquoi choisir MECINDIE ?</h2>
           <p className="features-subtitle">
             Des outils puissants conçus pour votre atelier
           </p>
@@ -381,11 +378,11 @@ export default function LandingPage({ onGoToLogin }) {
       <section className="stats-section animate-fade-in" id="stats">
         <div className="stats-container">
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="stat-number"><AnimatedNumber end={500} duration={2.5} /></div>
+            <div className="stat-number"><AnimatedNumber end={500} duration={5.5} /></div>
             <div className="stat-label">Ateliers Partenaires</div>
           </div>
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <div className="stat-number"><AnimatedNumber end={850} duration={2.5} />K</div>
+            <div className="stat-number"><AnimatedNumber end={850} duration={5.5} />K</div>
             <div className="stat-label">Réparations Gérées</div>
           </div>
           <div className="stat-item animate-fade-in" style={{ animationDelay: '0.4s' }}>
@@ -404,36 +401,55 @@ export default function LandingPage({ onGoToLogin }) {
         </div>
 
         <div className="pricing-grid">
-          {pricingTiers.map((tier, index) => {
-            const Icon = tier.icon;
-            return (
-              <div
-                key={tier.name}
-                className={`pricing-card animate-fade-in ${tier.highlight ? 'highlight' : ''}`}
-                style={{ animationDelay: `${index * 0.15}s` }}
-              >
-                <div className="pricing-card-header">
-                  <div className="pricing-icon"><Icon /></div>
-                  <span className="pricing-badge">{tier.badge}</span>
-                </div>
-                <h3 className="pricing-plan">{tier.name}</h3>
-                <p className="pricing-description">{tier.description}</p>
-                <div className="pricing-price">
-                  <span className="price-value">{tier.price}</span>
-                  <span className="price-unit">MAD / mois</span>
-                </div>
-                <ul className="pricing-features">
-                  {tier.features.map((feature) => (
-                    <li key={feature}>{feature}</li>
-                  ))}
-                </ul>
-                <button type="button" className="pricing-cta" onClick={scrollToContact}>
-                  Demander une demo
-                </button>
-              </div>
-            );
-          })}
+  {pricingTiers.map((tier, index) => {
+    const Icon = tier.icon;
+    return (
+      <div
+        key={tier.name}
+        className={`pricing-card animate-fade-in ${tier.highlight ? 'highlight' : ''}`}
+        style={{ animationDelay: `${index * 0.15}s` }}
+      >
+        {/* Top badge row */}
+        <div className="pricing-card-header">
+          <div className="pricing-icon"><Icon /></div>
+          <span className="pricing-badge">{tier.badge}</span>
         </div>
+
+        {/* Plan name */}
+        <h3 className="pricing-plan">{tier.name}</h3>
+        <p className="pricing-description">{tier.description}</p>
+
+        {/* Price block */}
+        <div className="pricing-price">
+          {/* Old price with strikethrough */}
+          <div className="pricing-old-price">
+            <span>{tier.oldPrice} MAD</span>
+          </div>
+          {/* Current price */}
+          <div className="pricing-price-row">
+            <span className="price-value">{tier.price}</span>
+            <span className="price-unit">MAD / mois</span>
+          </div>
+          {/* Savings pill */}
+          <span className="pricing-savings">{tier.savings}</span>
+        </div>
+
+        <ul className="pricing-features">
+          {tier.features.map((feature) => (
+            <li key={feature}>
+              <span className="pricing-check">✓</span>
+              {feature}
+            </li>
+          ))}
+        </ul>
+
+        <button type="button" className="pricing-cta" onClick={scrollToContact}>
+          Demander une démo
+        </button>
+      </div>
+    );
+  })}
+</div>
       </section>
 
       <section className="contact-section" id="contact">
