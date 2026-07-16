@@ -1,17 +1,18 @@
 <p align="center">
   <img src="front_end/public/logo_white.png" alt="MECINDIE" width="860" />
 </p>
+
+<p align="center">
+  <a href="https://drive.google.com/drive/folders/1K0-I578lkm_BYKE6lDSm9rWc6xMYQlBo" target="_blank">
+    <img src="front_end/public/demo.png" alt="Watch Demo" width="220" />
+  </a>
+</p>
+
 <h1 align="center">MECINDIE — Gestion d'Atelier Mécanique</h1>
- 
+
 <p align="center">
   Application web complète de gestion d'atelier mécanique.<br/>
   Laravel 12 · React · MySQL · XAMPP
-</p>
-<p align="center">
-  <img src="https://img.shields.io/badge/Laravel-12-red?logo=laravel" />
-  <img src="https://img.shields.io/badge/React-18-blue?logo=react" />
-  <img src="https://img.shields.io/badge/MySQL-MariaDB_10.4-orange?logo=mysql" />
-  <img src="https://img.shields.io/badge/PHP-8.2%2B-purple?logo=php" />
 </p>
 ---
  
