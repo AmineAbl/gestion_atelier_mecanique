@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://drive.google.com/drive/folders/1K0-I578lkm_BYKE6lDSm9rWc6xMYQlBo" target="_blank">
+  <a href="https://drive.google.com/file/d/1OxM0x8n_Hp9rks4841nFeTv4wZb4CaUY/view?usp=sharing" target="_blank">
     <img src="front_end/public/demo.png" alt="Watch Demo" width="220" />
   </a>
 </p>
